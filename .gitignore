@@ -1,0 +1,56 @@
+# ─── Datos sensibles — NUNCA al repo (PII, Ley 1581/2012) ───────────────────
+data/raw/
+data/processed/quality_report_completo.csv
+
+# Los reportes visuales y JSON de decisiones sí se versionan
+# data/processed/*.png  → incluidos
+# data/processed/fase1_decisiones.json → incluido
+
+# ─── Modelos y checkpoints (archivos grandes) ────────────────────────────────
+models/
+checkpoints/
+*.gguf
+*.bin
+*.safetensors
+*.pt
+*.pth
+
+# ─── Python ──────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ─── Entornos virtuales ──────────────────────────────────────────────────────
+env/
+env_eda/
+env_training/
+.venv/
+venv/
+
+# ─── Jupyter ─────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ─── IDE / OS ────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Secretos ────────────────────────────────────────────────────────────────
+.env
+.env.*
+secrets.yaml
+credentials.json
+
+# ─── Logs temporales ─────────────────────────────────────────────────────────
+logs/
+*.log
+tensorboard_logs/

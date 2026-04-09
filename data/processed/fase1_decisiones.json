@@ -1,0 +1,69 @@
+{
+  "ocr_engine": "easyocr_fallback_pymupdf",
+  "python_version": "3.12",
+  "calidad_visual": {
+    "distribucion": {
+      "APTO": 998,
+      "REQUIERE_PREPROCESAMIENTO": 9,
+      "ERROR": 4,
+      "DESCARTADO": 3
+    },
+    "pct_aptos": 98.4,
+    "pct_preprocesamiento": 0.9,
+    "pct_descartados": 0.3
+  },
+  "chunking": {
+    "Cédula": {
+      "mediana_palabras": 0,
+      "tokens_estimados": 0,
+      "estrategia": "sin_chunking"
+    },
+    "RUT": {
+      "mediana_palabras": 1117,
+      "tokens_estimados": 1489,
+      "estrategia": "sliding_window_30pct"
+    },
+    "Póliza": {
+      "mediana_palabras": 484,
+      "tokens_estimados": 645,
+      "estrategia": "sliding_window_30pct"
+    },
+    "Cámara de Comercio": {
+      "mediana_palabras": 1063,
+      "tokens_estimados": 1418,
+      "estrategia": "sliding_window_30pct"
+    },
+    "Otros": {
+      "mediana_palabras": 278,
+      "tokens_estimados": 370,
+      "estrategia": "sin_chunking"
+    }
+  },
+  "complejidad_lectura": {
+    "Cédula": {
+      "flesch_mediana": 58.03,
+      "szigriszt_mediana": 53.11,
+      "difficult_words_avg": 0.9
+    },
+    "RUT": {
+      "flesch_mediana": 84.5,
+      "szigriszt_mediana": 80.38,
+      "difficult_words_avg": 61.5
+    },
+    "Póliza": {
+      "flesch_mediana": 61.0,
+      "szigriszt_mediana": 56.58,
+      "difficult_words_avg": 54.9
+    },
+    "Cámara de Comercio": {
+      "flesch_mediana": 51.17,
+      "szigriszt_mediana": 46.49,
+      "difficult_words_avg": 114.7
+    },
+    "Otros": {
+      "flesch_mediana": 49.28,
+      "szigriszt_mediana": 44.8,
+      "difficult_words_avg": 56.4
+    }
+  }
+}

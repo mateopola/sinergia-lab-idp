@@ -65,5 +65,51 @@
       "szigriszt_mediana": 44.8,
       "difficult_words_avg": 56.4
     }
-  }
+  },
+  "bpe_correction": 1.25,
+  "tokens_hard_limit": 1800,
+  "chunking_bpe": {
+    "CÃ©dula": {
+      "mediana_tokens_bpe": 0,
+      "docs_superan_limite": 0,
+      "pct_superan": 0.0,
+      "docs_escaneados": 312,
+      "pct_escaneados": 93.4,
+      "estrategia": "sin_chunking"
+    },
+    "RUT": {
+      "mediana_tokens_bpe": 1861,
+      "docs_superan_limite": 151,
+      "pct_superan": 64.3,
+      "docs_escaneados": 27,
+      "pct_escaneados": 11.5,
+      "estrategia": "sliding_window_30pct"
+    },
+    "PÃ³liza": {
+      "mediana_tokens_bpe": 806,
+      "docs_superan_limite": 31,
+      "pct_superan": 14.2,
+      "docs_escaneados": 65,
+      "pct_escaneados": 29.7,
+      "estrategia": "sliding_window_30pct"
+    },
+    "CÃ¡mara de Comercio": {
+      "mediana_tokens_bpe": 1771,
+      "docs_superan_limite": 96,
+      "pct_superan": 45.3,
+      "docs_escaneados": 19,
+      "pct_escaneados": 9.0,
+      "estrategia": "sliding_window_30pct"
+    },
+    "Otros": {
+      "mediana_tokens_bpe": 463,
+      "docs_superan_limite": 1,
+      "pct_superan": 7.1,
+      "docs_escaneados": 5,
+      "pct_escaneados": 35.7,
+      "estrategia": "sin_chunking"
+    }
+  },
+  "total_escaneados": 428,
+  "pct_escaneados": 42.2
 }

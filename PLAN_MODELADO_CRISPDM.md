@@ -12,8 +12,8 @@
 - [x] Inventariar los 1,000 documentos SECOP por tipología: Cédula (334), RUT (235), Pólizas (219), Cámara de Comercio (212) *(+ 14 OTROS = 1,014 total)*
 - [x] Registrar formatos de entrada presentes: PDF nativo, PDF escaneado *(fig01_inventario.png — todos son PDF)*
 - [x] Calcular distribución de páginas por documento *(columna `n_pages` en quality_report_completo.csv)*
-- [ ] Identificar variantes regionales/institucionales dentro de cada tipología (ej. diferentes emisores de pólizas)
-- [x] Detectar documentos duplicados con hash MD5 *(columna `is_duplicate`; similitud coseno pendiente para Fase 2)*
+- [ ] Identificar variantes regionales/institucionales dentro de cada tipología *(movida a inicio de Fase 2 — requiere revisión visual humana, no automatizable con EDA estadístico)*
+- [x] Detectar documentos duplicados con hash MD5 *(columna `is_duplicate`; similitud coseno por embeddings → movida a Fase 2 §2.1)*
 
 ### 1.2 Textometría y Análisis de Densidad Textual
 - [x] Ejecutar **EasyOCR** como OCR baseline *(reemplaza PaddleOCR — Python 3.12 incompatible. Decisión v1.2)*
@@ -21,20 +21,20 @@
 - [x] Calcular densidad textual real con bounding boxes *(pymupdf_text_density para digitales, ocr_text_density para escaneados — fig04)*
 - [x] Medir: tokens por página, caracteres, densidad *(53 métricas textstat + tokens_bpe_ajustado en quality_report_completo.csv)*
 - [x] Calcular frecuencia de entidades objetivo *(columnas ent_cedula, ent_nit, ent_fecha, ent_monto, ent_email, ent_ciiu, ent_matricula, ent_poliza_num)*
-- [ ] Construir vocabulario específico por dominio (términos DIAN, RUNT, Supersociedades, aseguradoras) *(pendiente Fase 2)*
+- [ ] Construir vocabulario específico por dominio *(movida a Fase 2 — se construye después de definir entidades objetivo, no antes)*
 - [x] Identificar documentos digitales vs. escaneados *(columna `es_escaneado`: 423/1,014 = 42% escaneados)*
 
 ### 1.3 Evaluación de Calidad Visual
 - [x] Medir niveles de iluminación promedio con OpenCV *(columna `brightness` — umbral calibrado: HIGH=253, LOW=60)*
 - [x] Calcular contraste *(columna `contrast` — umbral LOW=20)*
 - [x] Detectar borrosidad con varianza del operador Laplaciano *(columna `blur_score` — umbral=100)*
-- [ ] Identificar rotaciones y correcciones necesarias (detección de ángulo con Hough Transform) *(pendiente Fase 2)*
+- [ ] Identificar rotaciones y correcciones necesarias *(movida a Fase 2 §2.1 — pertenece al pipeline de preprocesamiento, no al EDA)*
 - [x] Clasificar cada documento en: [APTO / REQUIERE_PREPROCESAMIENTO / DESCARTADO] *(columna `quality_label`)*
 - [x] Generar reporte de calidad visual *(quality_report_completo.csv 1,014 × 57 cols + fig02_scatter_iluminacion_blur.png)*
 
 ### 1.4 Entregables de Fase 1
 - [x] Notebook `01_analisis_descriptivo_secop.ipynb` ejecutado completamente *(31 celdas, celda 31 = síntesis de hallazgos)*
-- [ ] Reporte HTML de EDA con gráficos exportado *(pendiente — bajo prioridad, las figuras PNG cumplen la función)*
+- [~] ~~Reporte HTML de EDA con gráficos exportado~~ *(eliminada — el notebook .ipynb + 10 figuras PNG + CSV cumplen la función con mayor detalle)*
 - [x] CSV `data/processed/quality_report_completo.csv` con metadatos de calidad *(1,014 × 57 cols — incluye textstat, BPE, escaneados)*
 - [x] Decisión documentada: qué documentos pasan al pipeline *(fase1_decisiones.json — estrategias de chunking por tipología)*
 
@@ -52,6 +52,11 @@
 ---
 
 ## FASE 2 — PREPARACIÓN DE LOS DATOS (Data Preparation)
+
+### 2.0 Tareas trasladadas desde Fase 1 (completar antes de preprocesar)
+- [ ] **Variantes regionales/institucionales:** revisar visualmente ~10 docs por tipología — ¿hay diferencias de layout entre emisores? (ej. Sura vs. Bolívar en Pólizas, Bogotá vs. Medellín en CC). Documentar variantes encontradas en `reports/variantes_layout.md`
+- [ ] **Near-duplicates por embeddings:** calcular similitud coseno entre documentos del mismo tipo usando embeddings de texto PyMuPDF — detectar documentos casi idénticos que inflarían artificialmente el set de entrenamiento
+- [ ] **Vocabulario por dominio:** extraer los 200 términos más frecuentes por tipología del CSV existente (`quality_report_completo.csv`) — identificar términos DIAN, RUNT, Supersociedades que el tokenizador BPE fragmentará
 
 ### 2.1 Pipeline de Preprocesamiento Visual (OpenCV)
 - [ ] Implementar función `deskew()`: corrección de rotación con minAreaRect
@@ -455,6 +460,7 @@ SinergiaLabProyecto/
 *Actualizado: 2026-04-03 | Versión: 1.2 — Ajustes de entorno de desarrollo*
 *Actualizado: 2026-04-08 | Versión: 1.3 — Hallazgos del EDA real del corpus integrados*
 *Actualizado: 2026-04-08 | Versión: 1.4 — Corrección chunking RUT tras enriquecimiento BPE*
+*Actualizado: 2026-04-08 | Versión: 1.5 — Revisión de tareas Fase 1: reclasificación y eliminación*
 
 **Cambios v1.1:**
 - `§1.2` PaddleOCR reemplaza Tesseract como OCR baseline (bounding boxes nativos)
@@ -475,3 +481,11 @@ SinergiaLabProyecto/
 
 **Cambios v1.4** *(enriquecimiento BPE sobre corpus real — quality_report_completo.csv, 1,014 docs × 57 columnas)*:
 - `§2.3` **RUT requiere chunking (corrección sobre v1.1-v1.3):** El enriquecimiento BPE confirma que 151/235 RUT (64%) superan el límite de 1,800 tokens — mediana BPE de 1,861 tokens. La asunción anterior ("sin chunking") era incorrecta. RUT pasa a ventana deslizante junto con Pólizas, con punto de corte en fronteras de sección DIAN. Cifras reales del corpus: Cédula 0 docs, RUT 151 docs, Póliza 31 docs, CC 96 docs.
+
+**Cambios v1.5** *(revisión de tareas Fase 1 — reclasificación y eliminación de tareas)*:
+- `§1.1` Variantes regionales → movida a §2.0 (requiere revisión visual humana, no automatizable en EDA)
+- `§1.1` Near-duplicates coseno → movida a §2.0 (tarea de preparación de dataset, no de EDA)
+- `§1.2` Vocabulario por dominio → movida a §2.0 (se define después de las entidades objetivo)
+- `§1.3` Rotaciones Hough → ya estaba en §2.1; nota aclaratoria añadida
+- `§1.4` Reporte HTML → **eliminada** (notebook + figuras PNG + CSV cumplen la función)
+- `§2.0` Nueva sección: agrupa las 3 tareas trasladadas como pre-requisitos de Fase 2

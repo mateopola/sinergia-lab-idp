@@ -93,9 +93,20 @@ sns.set_theme(style='whitegrid', font_scale=1.1)
 plt.rcParams.update({'figure.dpi': 120})
 np.random.seed(42)
 
-# Cargar reporte del EDA
-df_eda = pd.read_csv(DATA_PROC / 'quality_report_completo.csv', encoding='utf-8-sig')
-print(f'CSV cargado: {df_eda.shape[0]} documentos x {df_eda.shape[1]} columnas')
+# Cargar reporte del EDA — intentar utf-8-sig primero, latin-1 como fallback
+csv_path = DATA_PROC / 'quality_report_completo.csv'
+for enc in ('utf-8-sig', 'latin-1'):
+    try:
+        df_eda = pd.read_csv(csv_path, encoding=enc)
+        # Limpiar BOM del primer nombre de columna si persiste
+        df_eda.columns = [c.replace('\ufeff', '').strip() for c in df_eda.columns]
+        if 'filepath' in df_eda.columns:
+            break
+    except Exception:
+        continue
+
+print(f'CSV cargado ({enc}): {df_eda.shape[0]} documentos x {df_eda.shape[1]} columnas')
+print('Columnas:', list(df_eda.columns[:6]), '...')
 print(df_eda['category'].value_counts().to_string())
 """))
 

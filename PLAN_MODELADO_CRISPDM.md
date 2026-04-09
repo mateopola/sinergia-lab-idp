@@ -98,22 +98,24 @@
 > **Decisión arquitectural v2:** Estrategia diferenciada por tipología según longitud real medida en EDA.
 > No aplicar lógica layout-aware a todo el corpus — solo donde el retorno justifica la complejidad.
 
-> **⚠️ ALERTA v1.3 — Corrección BPE obligatoria:** El tokenizador BPE de Llama 3 fragmenta palabras legales en español en subpalabras. Factor de corrección empírico: **x1.25** sobre la estimación heurística básica (`lexicon_count / 0.75`). El EDA del corpus confirma que **70 docs de CC y 24 de Pólizas** superan el límite de 2,048 tokens con esta corrección. El chunking es un requisito **duro**, no opcional, para estas tipologías.
+> **⚠️ ALERTA v1.3 — Corrección BPE obligatoria:** El tokenizador BPE de Llama 3 fragmenta palabras legales en español en subpalabras. Factor de corrección empírico: **x1.25** sobre la estimación heurística básica (`lexicon_count / 0.75`). El límite duro de chunking es **1,800 tokens** (margen 12% sobre 2,048).
 
-| Tipología | Tokens promedio (BPE x1.25) | Docs > 2,048 tokens | Estrategia de Chunking | Justificación |
+> **⚠️ CORRECCIÓN v1.4 — RUT requiere chunking:** Contra lo asumido en v1.1-v1.3, el enriquecimiento BPE sobre el corpus real revela que **151/235 RUT (64%) superan el límite de 1,800 tokens**. La mediana BPE del RUT es 1,861 tokens — por encima del límite. RUT se mueve de "sin chunking" a "ventana deslizante", igual que Pólizas. *Fuente: quality_report_completo.csv, columna `tokens_bpe_ajustado`, umbral 1,800.*
+
+| Tipología | Mediana tokens (BPE x1.25) | Docs > 1,800 tok | Estrategia de Chunking | Justificación |
 |---|---|---|---|---|
-| Cédula de Ciudadanía | ~0 (imágenes) | ~0 | **Sin chunking** | 93% escaneadas; texto via OCR es corto |
-| RUT (DIAN) | ~560 | 33 (outliers) | **Sin chunking (con límite duro)** | Promedio cabe en contexto; truncar outliers a 1,800 tokens |
-| Pólizas de Seguros | ~1,025 | **24 (11%)** | **Ventana deslizante** | Volumen moderado, layout variable entre aseguradoras |
-| Cámara de Comercio | ~2,750+ | **70 (33%)** | **Layout-aware (OpenCV)** | Docs largos con estructura tabular consistente |
+| Cédula de Ciudadanía | ~0 (imágenes) | 0 | **Sin chunking** | 93% escaneadas; texto OCR es corto |
+| RUT (DIAN) | **1,861** | **151 (64%)** | **Ventana deslizante** | Formulario denso supera límite en mayoría del corpus |
+| Pólizas de Seguros | ~806 | **31 (14%)** | **Ventana deslizante** | Volumen moderado, layout variable entre aseguradoras |
+| Cámara de Comercio | ~1,772 | **96 (45%)** | **Layout-aware (OpenCV)** | Docs multipágina con estructura tabular consistente |
 
-#### Sin Chunking — Cédula y RUT
-- [ ] Confirmar con EDA que token count promedio RUT < 700 (BPE x1.25) antes de marcar esta tarea completa
-- [ ] Aplicar límite duro: truncar a **1,800 tokens** (margen 12% sobre 2,048) — aplica a los 33 RUT outliers
-- [ ] Cédulas: sin chunking de texto; el pipeline OCR genera fragmentos cortos por naturaleza
+#### Sin Chunking — Solo Cédula
+- [ ] Cédulas: sin chunking de texto; el pipeline OCR genera fragmentos cortos por naturaleza (~0 tokens digitales)
 
-#### Ventana Deslizante — Pólizas de Seguros
+#### Ventana Deslizante — RUT y Pólizas de Seguros
+> *RUT agregado en v1.4: 151/235 docs (64%) superan 1,800 tokens BPE. Misma estrategia que Pólizas.*
 - [ ] Implementar ventana deslizante con `size=512 tokens`, `overlap=30%` *(aumentado de 20% → 30% para reducir cortes de entidades en el borde)*
+- [ ] Para RUT: respetar fronteras de sección DIAN (casillas agrupadas por bloque) al definir puntos de corte — no cortar a mitad de una micro-casilla
 - [ ] Añadir lógica de re-ensamble: al combinar chunks en inferencia, descartar predicciones duplicadas en zona de solapamiento usando NMS (Non-Maximum Suppression sobre spans)
 
 #### Layout-Aware con OpenCV — Cámara de Comercio (único doc que justifica el esfuerzo)
@@ -442,6 +444,7 @@ SinergiaLabProyecto/
 *Actualizado: 2026-04-03 | Versión: 1.1 — Revisión arquitectural Tech Lead aplicada*
 *Actualizado: 2026-04-03 | Versión: 1.2 — Ajustes de entorno de desarrollo*
 *Actualizado: 2026-04-08 | Versión: 1.3 — Hallazgos del EDA real del corpus integrados*
+*Actualizado: 2026-04-08 | Versión: 1.4 — Corrección chunking RUT tras enriquecimiento BPE*
 
 **Cambios v1.1:**
 - `§1.2` PaddleOCR reemplaza Tesseract como OCR baseline (bounding boxes nativos)
@@ -455,6 +458,10 @@ SinergiaLabProyecto/
 - `§Notas` Estrategia de dos entornos documentada: `env_eda` (Python 3.12) / `env_training` (Python 3.10)
 
 **Cambios v1.3** *(hallazgos derivados del EDA real del corpus — quality_report_completo.csv, 1,014 docs × 53 columnas)*:
+
 - `§2.2` **Cédulas excluidas de regex LFs:** 312/334 (93%) son documentos escaneados sin texto digital. Flujo alternativo: OCR muestral de 60 Cédulas + anotación manual en Label Studio. Las regex LFs se aplican únicamente a los 235 RUT digitales.
 - `§2.3` **Chunking es requisito duro para CC y Pólizas (corrección BPE x1.25):** El factor BPE confirma que 70 docs de Cámara de Comercio (33%) y 24 Pólizas (11%) superan 2,048 tokens. Límite de seguridad establecido en 1,800 tokens. Tabla de estrategias actualizada con columna `Docs > 2,048 tokens`.
 - `§3.1` **RUT confirmado como caso primario de Arctic-Extract:** EDA mide 97 bloques de texto y 26.2% de densidad de área en página típica de RUT. La estructura de micro-casillas DIAN valida el uso de Arctic-Extract sin OCR para este tipo documental.
+
+**Cambios v1.4** *(enriquecimiento BPE sobre corpus real — quality_report_completo.csv, 1,014 docs × 57 columnas)*:
+- `§2.3` **RUT requiere chunking (corrección sobre v1.1-v1.3):** El enriquecimiento BPE confirma que 151/235 RUT (64%) superan el límite de 1,800 tokens — mediana BPE de 1,861 tokens. La asunción anterior ("sin chunking") era incorrecta. RUT pasa a ventana deslizante junto con Pólizas, con punto de corte en fronteras de sección DIAN. Cifras reales del corpus: Cédula 0 docs, RUT 151 docs, Póliza 31 docs, CC 96 docs.

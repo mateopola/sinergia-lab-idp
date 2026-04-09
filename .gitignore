@@ -54,3 +54,4 @@ credentials.json
 logs/
 *.log
 tensorboard_logs/
+.claude/

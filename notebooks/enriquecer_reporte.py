@@ -11,8 +11,8 @@ derivadas que faltaban en el pipeline original:
   supera_limite_bpe    : tokens_bpe_ajustado > 1,800
 
 Tambien genera dos figuras nuevas que complementan el EDA existente:
-  fig03_tokens_bpe.png      : distribucion de tokens con limite BPE
-  fig04_densidad_escaneados : escaneados vs digitales por tipologia
+  fig09_tokens_bpe.png              : distribucion de tokens con limite BPE
+  fig10_escaneados_vs_digitales.png : escaneados vs digitales por tipologia
 
 Ejecutar desde la raiz del proyecto:
     python notebooks/enriquecer_reporte.py
@@ -106,7 +106,7 @@ def fig_tokens_bpe(df: pd.DataFrame):
     axes[1].set_xlim(0, supera.max() * 1.6 if supera.max() > 0 else 10)
 
     plt.tight_layout()
-    out = DATA_PROC / 'fig03_tokens_bpe.png'
+    out = DATA_PROC / 'fig09_tokens_bpe.png'
     plt.savefig(out, bbox_inches='tight', dpi=150)
     plt.close()
     print(f'  Guardada: {out}')
@@ -195,7 +195,7 @@ def fig_escaneados_vs_digitales(df: pd.DataFrame):
     axes[1].set_title('Impacto en estrategia de etiquetado (Plan v1.3)', fontweight='bold')
 
     plt.tight_layout()
-    out = DATA_PROC / 'fig04_escaneados_vs_digitales.png'
+    out = DATA_PROC / 'fig10_escaneados_vs_digitales.png'
     plt.savefig(out, bbox_inches='tight', dpi=150)
     plt.close()
     print(f'  Guardada: {out}')

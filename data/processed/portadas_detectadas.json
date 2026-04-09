@@ -1,0 +1,35 @@
+{
+  "Cedula": {
+    "muestra": 20,
+    "con_portada": 0,
+    "pct": 0.0,
+    "ejemplos": [],
+    "nota": "Desactivado: no aplica a esta tipologia"
+  },
+  "RUT": {
+    "muestra": 20,
+    "con_portada": 0,
+    "pct": 0.0,
+    "ejemplos": [],
+    "nota": "Desactivado: no aplica a esta tipologia"
+  },
+  "Poliza": {
+    "muestra": 20,
+    "con_portada": 5,
+    "pct": 25.0,
+    "ejemplos": [
+      "0. POLIZA .pdf",
+      "006 POLIZA DE SERIEDAD DE LA OFERTA.pdf",
+      "1. PAGO POLIZA SERIEDAD OFERTA PDTA 2026.pdf"
+    ]
+  },
+  "Camara de Comercio": {
+    "muestra": 20,
+    "con_portada": 2,
+    "pct": 10.0,
+    "ejemplos": [
+      "04. Cámara de Comercio Solidaria Manizales.pdf",
+      "1 - CERT EXISTENCIA Y RL 03-26 - Exp 02-03-26 - Sin clave.pdf"
+    ]
+  }
+}

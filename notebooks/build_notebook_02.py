@@ -125,7 +125,11 @@ a vectores TF-IDF (una representacion numerica del contenido), y calculamos la s
 entre pares. Similitud > 0.90 = documentos casi identicos.
 """))
 
-cells.append(code("""def extract_text_sample(category_path, n=None):
+cells.append(code("""# Tipologias donde la deteccion de portada es valida
+# Cedulas: DESACTIVADA — 93% son escaneadas y el criterio genera falsos positivos
+TIPOLOGIAS_CON_PORTADA = {'Poliza', 'Camara de Comercio'}
+
+def extract_text_sample(category_path, categoria='', n=None):
     \"\"\"Extrae texto digital de PDFs en una carpeta. n=None extrae todos.\"\"\"
     records = []
     files = sorted(category_path.glob('*.pdf'))
@@ -134,11 +138,12 @@ cells.append(code("""def extract_text_sample(category_path, n=None):
     for fp in files:
         try:
             doc = fitz.open(str(fp))
-            # Saltar portada si la hay (lexicon < 50 en pag 1)
+            # Saltar portada SOLO para tipologias digitales (Poliza y CC)
+            # Para Cedulas: NO aplicar — el criterio genera falsos positivos en imagenes escaneadas
             start_page = 0
-            if doc.page_count > 1:
+            if categoria in TIPOLOGIAS_CON_PORTADA and doc.page_count > 1:
                 p0_text = doc[0].get_text().strip()
-                p0_blocks = doc[0].get_text('blocks')
+                p0_blocks = [b for b in doc[0].get_text('blocks') if b[6] == 0]
                 if len(p0_text) < 50 and len(p0_blocks) < 5:
                     start_page = 1
             text = ' '.join(doc[i].get_text() for i in range(start_page, doc.page_count))
@@ -155,7 +160,7 @@ for cat, folder in CATEGORIES.items():
     if not folder.exists():
         print(f'  Carpeta no encontrada: {folder}')
         continue
-    df_cat = extract_text_sample(folder)
+    df_cat = extract_text_sample(folder, categoria=cat)
     df_cat = df_cat[df_cat['text'].str.len() > 100]  # solo docs con texto real
 
     if len(df_cat) < 2:
@@ -223,7 +228,7 @@ vocab_results = {}
 for cat, folder in CATEGORIES.items():
     if not folder.exists():
         continue
-    df_cat = extract_text_sample(folder)
+    df_cat = extract_text_sample(folder, categoria=cat)
     df_cat = df_cat[df_cat['text'].str.len() > 100]
 
     if df_cat.empty:
@@ -275,11 +280,18 @@ Este criterio fue definido con base en el hallazgo de la revision visual del cor
 Se aplica a **todas las tipologias** — no solo a Camara de Comercio.
 """))
 
-cells.append(code("""def detectar_portada(pdf_path):
+cells.append(code("""def detectar_portada(pdf_path, categoria=''):
     \"\"\"
     Detecta si la pagina 1 de un PDF es una portada (sin datos estructurados).
     Retorna: (tiene_portada: bool, start_page: int)
+
+    NOTA — Cedulas EXCLUIDAS: el criterio (lexicon < 50 AND blocks < 5) genera
+    falsos positivos en cedulas escaneadas (93% del corpus) donde pagina 1 = imagen.
+    La deteccion de portada solo aplica a Polizas y Camara de Comercio.
     \"\"\"
+    if categoria and categoria not in TIPOLOGIAS_CON_PORTADA:
+        return False, 0
+
     try:
         doc = fitz.open(str(pdf_path))
         if doc.page_count <= 1:
@@ -287,8 +299,8 @@ cells.append(code("""def detectar_portada(pdf_path):
             return False, 0
 
         p0 = doc[0]
-        texto_p0  = p0.get_text().strip()
-        bloques_p0 = [b for b in p0.get_text('blocks') if b[6] == 0]  # solo texto
+        texto_p0   = p0.get_text().strip()
+        bloques_p0 = [b for b in p0.get_text('blocks') if b[6] == 0]
         doc.close()
 
         es_portada = len(texto_p0) < 50 and len(bloques_p0) < 5
@@ -297,7 +309,8 @@ cells.append(code("""def detectar_portada(pdf_path):
         return False, 0
 
 # Ejecutar sobre muestra de 20 docs por tipologia
-print('Detectando portadas en muestra del corpus...\\n')
+print('Detectando portadas en muestra del corpus...')
+print('(Cedulas: desactivado — falsos positivos en imagenes escaneadas)\\n')
 portada_resumen = {}
 
 for cat, folder in CATEGORIES.items():
@@ -305,8 +318,17 @@ for cat, folder in CATEGORIES.items():
         continue
     files = sorted(folder.glob('*.pdf'))[:20]
     con_portada = []
+
+    if cat not in TIPOLOGIAS_CON_PORTADA:
+        portada_resumen[cat] = {
+            'muestra': len(files), 'con_portada': 0, 'pct': 0.0,
+            'ejemplos': [], 'nota': 'Desactivado: no aplica a esta tipologia'
+        }
+        print(f'  {cat:<22}: DESACTIVADO (no aplica)')
+        continue
+
     for fp in files:
-        tiene, _ = detectar_portada(fp)
+        tiene, _ = detectar_portada(fp, categoria=cat)
         if tiene:
             con_portada.append(fp.name)
 
@@ -368,6 +390,15 @@ def denoise(img_gray):
     \"\"\"Elimina ruido con filtro gaussiano suave.\"\"\"
     return cv2.GaussianBlur(img_gray, (3, 3), 0)
 
+def enhance_contrast(img_gray, clip_limit=2.0, tile_grid=(8, 8)):
+    \"\"\"
+    Mejora el contraste local con CLAHE (Contrast Limited Adaptive Histogram Equalization).
+    Util para documentos escaneados con iluminacion desigual o fondos grises.
+    clip_limit=2.0 es conservador: mejora sin amplificar ruido.
+    \"\"\"
+    clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=tile_grid)
+    return clahe.apply(img_gray)
+
 def binarize(img_gray):
     \"\"\"Umbralización adaptativa Otsu: separa texto del fondo de forma robusta.\"\"\"
     _, binarized = cv2.threshold(
@@ -383,15 +414,16 @@ def normalize_dpi(img_rgb, target_dpi=300, source_dpi=150):
     new_w = int(img_rgb.shape[1] * scale)
     return cv2.resize(img_rgb, (new_w, new_h), interpolation=cv2.INTER_LANCZOS4)
 
-def preprocess_pipeline(pdf_path):
+def preprocess_pipeline(pdf_path, categoria=''):
     \"\"\"
-    Pipeline completo: abre PDF, detecta portada, aplica todas las correcciones.
+    Pipeline completo: abre PDF, detecta portada (segun tipologia), aplica correcciones.
+    Flujo: deskew -> denoise -> enhance_contrast -> binarize -> normalize_dpi
     Retorna imagen procesada como array RGB o None si falla.
     \"\"\"
     try:
         doc = fitz.open(str(pdf_path))
-        # Detectar portada
-        _, start_page = detectar_portada(pdf_path)
+        # Detectar portada respetando la tipologia (Cedulas: siempre start_page=0)
+        _, start_page = detectar_portada(pdf_path, categoria=categoria)
         if start_page >= doc.page_count:
             start_page = 0
 
@@ -404,6 +436,7 @@ def preprocess_pipeline(pdf_path):
         img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2GRAY)
         img_gray = deskew(img_gray)
         img_gray = denoise(img_gray)
+        img_gray = enhance_contrast(img_gray)   # CLAHE antes de binarizar
         img_gray = binarize(img_gray)
         img_rgb_clean = cv2.cvtColor(img_gray, cv2.COLOR_GRAY2RGB)
         img_rgb_clean = normalize_dpi(img_rgb_clean)
@@ -412,11 +445,15 @@ def preprocess_pipeline(pdf_path):
         return None
 
 print('Funciones de preprocesamiento definidas:')
-print('  deskew() — correccion de inclinacion')
-print('  denoise() — eliminacion de ruido')
-print('  binarize() — binarizacion Otsu')
-print('  normalize_dpi() — normalizacion a 300 DPI')
-print('  preprocess_pipeline() — pipeline completo con deteccion de portada')
+print('  deskew()           — correccion de inclinacion')
+print('  denoise()          — eliminacion de ruido gaussiano')
+print('  enhance_contrast() — CLAHE para iluminacion desigual')
+print('  binarize()         — binarizacion Otsu')
+print('  normalize_dpi()    — normalizacion a 300 DPI')
+print('  preprocess_pipeline(pdf_path, categoria) — pipeline completo')
+print()
+print('NOTA: preprocess_pipeline() acepta categoria para activar/desactivar')
+print('      deteccion de portada segun tipologia.')
 """))
 
 cells.append(code("""# Validar pipeline en muestra de docs con REQUIERE_PREPROCESAMIENTO
@@ -603,7 +640,7 @@ def layout_aware_chunks(pdf_path):
     \"\"\"
     try:
         doc = fitz.open(str(pdf_path))
-        _, start_page = detectar_portada(pdf_path)
+        _, start_page = detectar_portada(pdf_path, categoria='Camara de Comercio')
         secciones, seccion_actual = [], []
 
         for page_num in range(start_page, doc.page_count):
@@ -671,7 +708,7 @@ for cat in cats_chunking:
 
     for fp in files:
         doc = fitz.open(str(fp))
-        _, start = detectar_portada(fp)
+        _, start = detectar_portada(fp, categoria=cat)
         texto = ' '.join(doc[i].get_text() for i in range(start, doc.page_count))
         doc.close()
 
@@ -700,6 +737,222 @@ if not df_chunks.empty:
     print(df_chunks.to_string(index=False))
 """))
 
+cells.append(code("""import re as _re
+
+# Filtro CIIU inline — necesario antes de chunk_document (definicion completa en Seccion 5b)
+_CIIU_HEADER = _re.compile(r'(?i)(?:24\\.\\s*ACTIVIDADES?\\s*ECON[OO]MICAS?|casilla\\s*24)')
+_CIIU_FOOD   = _re.compile(
+    r'\\b(org[aá]nicas?|congeladas?|congelados?|frasco|lata|secas?|secos?|org[aá]nicos?)\\b',
+    _re.IGNORECASE)
+
+def filtrar_ciiu_rut(texto):
+    m = _CIIU_HEADER.search(texto)
+    if m:
+        filtrado = texto[:m.start()].strip()
+        if len(filtrado) > 200:
+            return filtrado
+    return _CIIU_FOOD.sub('', texto)
+
+def chunk_document(pdf_path, doc_type):
+    \"\"\"
+    Funcion unificada de chunking — doc_type determina la estrategia internamente.
+
+    Estrategias:
+      Cedula           -> sin chunking (texto OCR corto)
+      RUT              -> filtro CIIU + ventana deslizante si > 1800 tokens
+      Poliza           -> ventana deslizante si > 1800 tokens
+      Camara de Comercio -> layout-aware con bboxes PyMuPDF
+
+    Retorna dict: {doc_type, estrategia, n_chunks, chunks, tokens_estimados}
+    \"\"\"
+    try:
+        doc = fitz.open(str(pdf_path))
+        _, start_page = detectar_portada(pdf_path, categoria=doc_type)
+        texto = ' '.join(doc[i].get_text() for i in range(start_page, doc.page_count))
+        doc.close()
+    except Exception:
+        return {'doc_type': doc_type, 'estrategia': 'error', 'n_chunks': 0,
+                'chunks': [], 'tokens_estimados': 0}
+
+    # Filtro CIIU solo para RUT
+    if doc_type == 'RUT':
+        texto = filtrar_ciiu_rut(texto)
+
+    tokens_est = palabras_a_tokens_bpe(len(texto.split()))
+
+    if doc_type == 'Cedula':
+        return {'doc_type': doc_type, 'estrategia': 'sin_chunking',
+                'n_chunks': 1 if texto.strip() else 0,
+                'chunks': [texto] if texto.strip() else [],
+                'tokens_estimados': tokens_est}
+
+    if doc_type == 'Camara de Comercio':
+        chunks = layout_aware_chunks(pdf_path)
+        return {'doc_type': doc_type, 'estrategia': 'layout_aware',
+                'n_chunks': len(chunks), 'chunks': chunks, 'tokens_estimados': tokens_est}
+
+    # RUT y Poliza: ventana deslizante si supera el limite
+    if tokens_est > TOKENS_HARD_LIMIT:
+        chunks = sliding_window_chunks(texto)
+        estrategia = 'sliding_window'
+    else:
+        chunks = [texto]
+        estrategia = 'sin_chunking'
+
+    return {'doc_type': doc_type, 'estrategia': estrategia,
+            'n_chunks': len(chunks), 'chunks': chunks, 'tokens_estimados': tokens_est}
+
+# Demostrar chunk_document() sobre un doc por tipologia
+print('Demostracion de chunk_document():')
+print('-' * 65)
+for cat, folder in CATEGORIES.items():
+    if not folder.exists():
+        continue
+    fp = sorted(folder.glob('*.pdf'))[0]
+    result = chunk_document(fp, cat)
+    print(f'  {cat:<22} | estrategia={result[\"estrategia\"]:<16} '
+          f'| chunks={result[\"n_chunks\"]} | tokens_est={result[\"tokens_estimados\"]}')
+"""))
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SECCION 5b: FILTRO CIIU + LABELING FUNCTIONS PARA RUT
+# ══════════════════════════════════════════════════════════════════════════════
+cells.append(md("""---
+## Seccion 5b — Filtro CIIU y Pre-anotacion Automatica de RUT
+
+### Por que necesitamos esto?
+
+El analisis de vocabulario revelo que los documentos RUT contienen la lista completa de
+clasificaciones CIIU del formulario DIAN — miles de terminos de actividades economicas
+(frutas organicas, latas, frascos, congelados) que no son entidades NER sino ruido del
+formulario. Si estos terminos entran en los embeddings de RUT, el modelo aprendera
+asociaciones erroneas.
+
+**Solucion en dos pasos:**
+1. `filtrar_ciiu_rut()` — elimina la seccion CIIU antes de generar embeddings
+2. `extraer_entidades_rut()` — regex Labeling Functions para pre-anotar los 235 RUT
+   automaticamente antes de la revision humana en Label Studio
+"""))
+
+cells.append(code("""import re
+
+# ── Filtro CIIU para RUT ─────────────────────────────────────────────────────
+# Patron del encabezado de la seccion de actividades economicas en el formulario DIAN
+_CIIU_HEADER = re.compile(
+    r'(?i)(?:24\\.\\s*ACTIVIDADES?\\s*ECON[OO]MICAS?|casilla\\s*24)',
+)
+# Vocabulario alimentario CIIU que contamina embeddings de RUT
+_CIIU_FOOD_TERMS = re.compile(
+    r'\\b(org[aá]nicas?|congeladas?|congelados?|frasco|lata|secas?|secos?|'
+    r'org[aá]nicos?|frescas?|frescos?|deshidratadas?|enlatadas?)\\b',
+    re.IGNORECASE,
+)
+
+def filtrar_ciiu_rut(texto):
+    \"\"\"
+    Elimina la seccion de actividades CIIU del texto de un RUT para embeddings limpios.
+    Paso 1: truncar desde el header de la seccion CIIU.
+    Paso 2 (fallback): eliminar tokens del vocabulario CIIU conocido.
+    \"\"\"
+    match = _CIIU_HEADER.search(texto)
+    if match:
+        filtrado = texto[:match.start()].strip()
+        if len(filtrado) > 200:
+            return filtrado
+    return _CIIU_FOOD_TERMS.sub('', texto)
+
+# ── Regex Labeling Functions para RUT ────────────────────────────────────────
+def extraer_entidades_rut(texto):
+    \"\"\"
+    Extrae entidades NER de un RUT con regex (Labeling Functions para pre-anotacion).
+    Retorna dict con entidades encontradas (None si no se detecta).
+    Usar sobre texto COMPLETO (NO aplicar filtrar_ciiu_rut antes para NER).
+
+    Calibrado para el formato real del formulario DIAN:
+    - NIT: cajas de digitos individuales separados por espacio (8 6 0 5 1...)
+    - Razon social: MAYUSCULAS con forma juridica (LTDA, SAS, SA, EU...)
+    - RL: APELLIDOS NOMBRES justo antes de la linea 'Representante legal'
+    \"\"\"
+    entidades = {}
+
+    # NIT — formato continuo con guion O cajas DIAN (digitos con espacio)
+    m = re.search(r'\\b(\\d{7,11})\\s*[-\\u2013]\\s*(\\d)\\b', texto)
+    if m:
+        entidades['nit'] = f\"{m.group(1)}-{m.group(2)}\"
+    else:
+        m = re.search(r'(\\d(?: \\d){8,9})', texto)
+        if m:
+            digits = m.group(1).replace(' ', '')
+            entidades['nit'] = f\"{digits[:-1]}-{digits[-1]}\" if len(digits) >= 9 else digits
+        else:
+            entidades['nit'] = None
+
+    # Razon social — lineas MAYUSCULAS con forma juridica conocida
+    m = re.search(
+        r'\\n([A-Z][A-Z\\s\\.,&-]{8,99}(?:LTDA|SAS|S\\.A|E\\.U|EIRL|CIA|INC)[^\\n]*)\\n',
+        texto,
+    )
+    entidades['razon_social'] = m.group(1).strip() if m else None
+
+    # Regimen — normalizado: ordinar* -> ordinario, simpli* -> simplificado
+    m = re.search(r'(?i)r[eé]gimen\\s+(\\w+)', texto)
+    if m:
+        r = m.group(1).strip()
+        if r.lower().startswith('ordinar'):
+            r = 'ordinario'
+        elif r.lower().startswith('simpli'):
+            r = 'simplificado'
+        entidades['regimen'] = r
+    else:
+        entidades['regimen'] = None
+
+    # Direccion — nomenclatura colombiana (CL, CR, AV, TV, KR + numero)
+    m = re.search(r'(?i)\\b((?:CL|CR|AV|TV|KR|CALLE|CARRERA|AVENIDA)\\s+\\d+[^\\n]{5,80})', texto)
+    entidades['direccion'] = m.group(1).strip() if m else None
+
+    # Municipio — ciudades principales de Colombia
+    m = re.search(
+        r'(Bogot[aá][\\s,]*D\\.?C\\.?|Medell[ií]n|Cali|Barranquilla|Cartagena|'
+        r'Bucaramanga|Pereira|Manizales|Ibagu[eé]|[Cc][uú]cuta|Villavicencio|'
+        r'Santa Marta|Monter[ií]a|Neiva|Armenia|Pasto|Popay[aá]n)',
+        texto,
+    )
+    entidades['municipio'] = m.group(1).strip() if m else None
+
+    # Representante legal — APELLIDOS NOMBRES antes de linea 'Representante legal'
+    m = re.search(
+        r'([A-Z]{2,}(?:\\s+[A-Z]{2,}){1,5})\\s*\\nRepresentante legal',
+        texto,
+    )
+    entidades['representante_legal'] = m.group(1).strip() if m else None
+
+    return entidades
+
+# ── Validar sobre muestra de RUT ─────────────────────────────────────────────
+folder_rut = CATEGORIES.get('RUT')
+if folder_rut and folder_rut.exists():
+    files_rut = sorted(folder_rut.glob('*.pdf'))[:5]
+    print('Validacion de Labeling Functions sobre 5 documentos RUT:')
+    print('-' * 70)
+    exitosos = 0
+    for fp in files_rut:
+        doc = fitz.open(str(fp))
+        texto_crudo = ' '.join(doc[i].get_text() for i in range(doc.page_count))
+        doc.close()
+        # NOTA: para NER usar texto COMPLETO (no filtrado)
+        # filtrar_ciiu_rut() es solo para embeddings/TF-IDF
+        entidades = extraer_entidades_rut(texto_crudo)
+        encontradas = sum(1 for v in entidades.values() if v is not None)
+        exitosos += (1 if encontradas >= 3 else 0)
+        print(f'  {fp.name[:45]:<45} | ents: {encontradas}/6')
+        for campo, valor in entidades.items():
+            if valor:
+                print(f'      {campo:<22}: {str(valor)[:60]}')
+    print(f'\\n  LFs exitosas (>= 3 entidades encontradas): {exitosos}/{len(files_rut)}')
+else:
+    print('Carpeta RUT no encontrada')
+"""))
+
 # ══════════════════════════════════════════════════════════════════════════════
 # SECCION 6: RESUMEN Y PROXIMOS PASOS
 # ══════════════════════════════════════════════════════════════════════════════
@@ -713,9 +966,11 @@ cells.append(md("""---
 | `near_duplicates.json` | Pares de documentos con similitud coseno >= 0.90 |
 | `vocabulario_dominio.json` | Top 30 terminos juridicos por tipologia |
 | `portadas_detectadas.json` | Proporcion de documentos con portada por tipologia |
-| `aseguradoras_corpus.json` | Distribucion de aseguradoras en Polizas + cuota de anotacion |
-| Funciones de preprocesamiento | `deskew`, `denoise`, `binarize`, `normalize_dpi`, `preprocess_pipeline` |
-| Funciones de chunking | `sliding_window_chunks`, `layout_aware_chunks` |
+| `aseguradoras_corpus.json` | Distribucion de aseguradoras en Polizas (dato informativo) |
+| Funciones de preprocesamiento | `deskew`, `denoise`, `enhance_contrast`, `binarize`, `normalize_dpi`, `preprocess_pipeline` |
+| Funciones de chunking | `sliding_window_chunks`, `layout_aware_chunks`, `chunk_document` |
+| Filtro CIIU | `filtrar_ciiu_rut()` — elimina ruido de actividades economicas antes de embeddings |
+| Labeling Functions RUT | `extraer_entidades_rut()` — pre-anotacion automatica regex para 235 RUT |
 
 ### Que sigue: la anotacion humana
 
@@ -725,12 +980,16 @@ que el modelo usara como ground truth para aprender.
 
 **Distribucion de la carga de anotacion:**
 
-| Tipologia | Estrategia | Docs a anotar | Quien |
-|---|---|---|---|
-| Cedula | OCR muestral + revision manual | 60 docs | Anotador humano |
-| RUT | Regex LFs automaticas + revision | 235 docs (revision de errores) | Anotador humano |
-| Poliza | Anotacion manual estratificada por aseguradora | 80 docs (proporcional) | Anotador humano |
-| Camara de Comercio | Anotacion manual | 80 docs | Anotador humano |
+| Tipologia | Estrategia | Docs a anotar |
+|---|---|---|
+| Cedula | OCR muestral (EasyOCR) + revision manual bboxes | 60 docs |
+| RUT | Pre-anotacion automatica LFs + revision humana | 235 docs (revision de errores) |
+| Poliza | Anotacion manual (muestra aleatoria digitales) | 80 docs |
+| Camara de Comercio | Anotacion manual | 80 docs |
+
+**Nota sobre RUT:** las Labeling Functions generan pre-anotaciones automaticas
+sobre los 235 docs digitales. En Label Studio solo hay que corregir los errores,
+no anotar desde cero. Esto reduce el trabajo de anotacion de RUT en ~70%.
 
 Una vez completada la anotacion, el **Notebook 03** tomara estos datos anotados
 y ejecutara el fine-tuning del modelo Llama 3 con QLoRA.

@@ -59,19 +59,30 @@
   - **RUT:** formato único — plantilla DIAN estándar. Solo varía el contenido de las casillas.
   - **Cámara de Comercio:** formato único por cámara, pero **algunos documentos tienen portada** (página 1 = imagen corporativa sin datos). El pipeline debe detectar y saltar portadas antes de extraer texto.
   - **Pólizas:** formato variable por aseguradora. Los 80 docs de anotación deben distribuirse proporcionalmente entre aseguradoras presentes en el corpus para cubrir la variabilidad de layout.
-- [ ] **Near-duplicates por embeddings:** calcular similitud coseno entre documentos del mismo tipo usando embeddings de texto PyMuPDF — detectar documentos casi idénticos que inflarían artificialmente el set de entrenamiento
-- [ ] **Vocabulario por dominio:** extraer los 200 términos más frecuentes por tipología del CSV existente (`quality_report_completo.csv`) — identificar términos DIAN, RUNT, Supersociedades que el tokenizador BPE fragmentará
+- [x] **Near-duplicates por TF-IDF coseno (Notebook 02):** ejecutado sobre corpus completo. Hallazgos:
+  - **Cédula:** 1 par exacto (sim=1.0) → duplicado real, eliminar antes del split.
+  - **RUT:** 1 par exacto real (`01 RUT_1.pdf` == `01 RUT_2.pdf`) + ~30 pares con sim 0.90-0.98 → **falsos positivos por estructura DIAN compartida** (plantilla compartida — TF-IDF ve similitud estructural, no de contenido). **Umbral ajustado a ≥0.99 para RUT**, ≥0.90 para las demás tipologías.
+  - **Póliza y CC:** sin duplicados detectados a umbral 0.90.
+- [x] **Vocabulario por dominio (Notebook 02):** top-30 términos extraídos por tipología. Hallazgos:
+  - **RUT — anomalía crítica:** términos dominantes son `orgánicas` (13,879), `lata` (12,437), `frasco` (12,435), `congeladas`, `secas`. Corresponden a **clasificaciones CIIU del formulario DIAN** impresas completas (lista de actividades económicas). No es OCR noise — es artefacto de diseño del formulario. La sección CIIU contamina embeddings. **Decisión:** filtrar sección CIIU antes de generar embeddings para fine-tuning.
+  - **Cédula — requiere investigación:** términos de CC (`expedición`, `certificado`, `comercio`, `cámara`) aparecen con alta frecuencia. Hipótesis: el texto proviene de las carátulas de expediente SECOP detectadas como portada (15% de muestra). Estas carátulas contienen membrete institucional con términos de cámara/comercio. **Acción pendiente:** inspeccionar texto de las 3 carátulas de Cédula detectadas para confirmar fuente del ruido.
+  - **Póliza y CC:** vocabulario limpio y coherente. Sin anomalías.
 
 ### 2.1 Pipeline de Preprocesamiento Visual (OpenCV)
 > **Hallazgo v1.6:** algunos documentos tienen portada (pág. 1 = imagen corporativa sin datos). Confirmado en CC; puede aparecer en cualquier tipología. La detección de portada es el primer paso del pipeline, antes de cualquier extracción.
 
-- [ ] **Detección de portada (todas las tipologías):** si página 1 tiene `lexicon_count < 50` Y `pymupdf_blocks < 5` → portada → iniciar procesamiento desde página 2
-- [ ] Implementar función `deskew()`: corrección de rotación con minAreaRect
-- [ ] Implementar función `denoise()`: filtro gaussiano + Non-Local Means para escaneados ruidosos
-- [ ] Implementar función `binarize()`: umbralización adaptativa Otsu o Sauvola para fondos no uniformes
-- [ ] Implementar función `enhance_contrast()`: CLAHE (Contrast Limited Adaptive Histogram Equalization)
-- [ ] Implementar función `normalize_dpi()`: re-muestreo a 300 DPI estándar para documentos escaneados
-- [ ] Construir pipeline modular: `detect_cover → deskew → denoise → binarize → normalize → processed_image`
+- [x] **Detección de portada (todas las tipologías, Notebook 02):** implementada y validada. Resultados e inspección posterior:
+  - **Cédula: DESACTIVADA.** Las 3 "portadas" detectadas son falsos positivos — cédulas escaneadas normales con página 1 = imagen (0 texto), que cumplen el criterio `lexicon < 50 AND blocks < 5` por ser imágenes, no por ser portadas. Con 93% del corpus escaneado, el detector dispara en casi todo el corpus. Excepción detectada: `4. DOCUMENTO DE IDENTIDAD RL.pdf` (6 págs, portada textual real de expediente), pero es un caso aislado. Decisión: **no aplicar detección de portada a Cédulas — procesar todas las páginas por OCR directamente**.
+  - **Vocabulario CC en Cédulas:** origen probable = documentos mal clasificados en carpeta CEDULA del SECOP (ej. `Ponderable 3.1 Copia CC Socios - Autentica.pdf`). No es ruido de portadas.
+  - RUT: 0/20 (0%) — plantilla DIAN siempre inicia con datos. Correcto.
+  - Póliza: 5/20 (25%) — portadas corporativas de aseguradoras. Detector válido y útil.
+  - Cámara de Comercio: 2/20 (10%) — algunas cámaras incluyen página de presentación. Detector válido.
+- [x] Implementar función `deskew()`: corrección de rotación con minAreaRect *(Notebook 02, Sección 3)*
+- [x] Implementar función `denoise()`: filtro gaussiano + Non-Local Means para escaneados ruidosos *(Notebook 02, Sección 3)*
+- [x] Implementar función `binarize()`: umbralización adaptativa Otsu *(Notebook 02, Sección 3)*
+- [x] Implementar función `enhance_contrast()`: CLAHE (Contrast Limited Adaptive Histogram Equalization) *(Notebook 02 v2, pipeline.py)*
+- [x] Implementar función `normalize_dpi()`: re-muestreo a 300 DPI estándar *(Notebook 02, Sección 3)*
+- [x] Construir pipeline modular: `detect_cover → deskew → denoise → enhance_contrast → binarize → normalize_dpi` *(Notebook 02 v2, pipeline.py)*
 - [ ] Guardar imágenes procesadas en `data/processed/images/` con nomenclatura estandarizada
 - [ ] Validar pipeline con muestra de 50 documentos y comparar métricas OCR antes/después
 
@@ -91,12 +102,14 @@
 > **⚠️ ALERTA v1.3 — Cédulas NO son elegibles para regex LFs:**
 > El EDA del corpus confirma que **312 de 334 Cédulas (93%) son documentos escaneados** — no contienen texto como caracteres. Las regex no tienen texto sobre el que operar. Ver Hallazgo 1 en `01_analisis_descriptivo_secop.ipynb`.
 
-- [ ] Implementar LFs con regex **exclusivamente para RUT** (texto digital disponible):
-  ```python
-  r'\b\d{9}-\d\b'                            # → nit
-  r'(?i)(r[eé]gimen\s+)(simplificado|com[uú]n)'  # → regimen
-  r'(?i)CIIU\s*[:\s]+(\d{4})'               # → ciiu
-  ```
+- [x] Implementar LFs con regex para RUT *(Notebook 02 v2, Sección 5b + pipeline.py)*:
+  - `nit`: formato continuo con guión + cajas DIAN (dígitos individuales separados por espacio) — 5/5 docs correctos
+  - `razon_social`: líneas en MAYÚSCULAS con forma jurídica (LTDA, SAS, S.A, E.U) — 5/5 docs correctos
+  - `regimen`: normalizado ("ordinar*" → "ordinario", "simpli*" → "simplificado") — 5/5 docs correctos
+  - `direccion`: nomenclatura colombiana (CL/CR/AV/TV/KR + número) — 5/5 docs correctos
+  - `municipio`: lista de ciudades principales Colombia — 5/5 docs (municipio siempre "Cali" en muestra → revisar en corpus)
+  - `representante_legal`: APELLIDOS NOMBRES antes de "Representante legal" — 5/5 docs correctos
+  - **NOTA sobre `filtrar_ciiu_rut()`:** usar SOLO para embeddings/TF-IDF, NO para extracción NER. La función elimina tokens CIIU (orgánicas, lata, frasco) del texto para generar embeddings limpios.
 - [ ] Generar pre-anotaciones automáticas sobre los **235 RUT** (texto digital)
 - [ ] Cargar pre-anotaciones en Label Studio → revisión humana solo para corregir (no anotar desde cero)
 - [ ] Target: Cohen's Kappa > 0.85 en muestra de validación cruzada de 50 docs por tipología
@@ -108,12 +121,13 @@
 - [ ] Usar las 60 anotaciones corregidas como seed para fine-tuning; escalar con augmentación 3x
 - [ ] **No** intentar regex LFs sobre el texto extraído por OCR — la tasa de error OCR invalida la estrategia automática
 
-#### Pólizas — Anotación Manual Estratificada por Aseguradora
-> **Hallazgo v1.6:** Pólizas tienen layout variable por aseguradora. Los 80 docs de entrenamiento deben distribuirse proporcionalmente entre las aseguradoras presentes en el corpus — no tomar 80 docs de una sola.
-- [ ] Identificar aseguradoras presentes en el corpus (extraer campo `aseguradora` de los docs digitales con PyMuPDF)
-- [ ] Distribuir los 80 docs de entrenamiento proporcionalmente: si hay 5 aseguradoras → ~16 docs c/u
-- [ ] Anotar manualmente **80 Pólizas estratificadas** — conjunto de entrenamiento
-- [ ] Anotar **40 Pólizas** (proporcional por aseguradora) — conjunto de validación sin augmentación
+#### Pólizas — Anotación Manual (muestra aleatoria)
+> **Decisión v1.7:** Las entidades objetivo de Póliza (número_poliza, aseguradora, tomador, vigencia_desde, vigencia_hasta, valor_asegurado, prima_neta, amparo_principal) son estándar del contrato de seguro colombiano — iguales en todas las aseguradoras independientemente del layout. La identificación de aseguradora **no es requisito para estratificar** el set de entrenamiento. Selección: muestra aleatoria del corpus de Pólizas digitales.
+
+- [x] Identificar aseguradoras presentes en el corpus — ejecutado en Notebook 02 (`aseguradoras_corpus.json`). Dato informativo, no bloqueante.
+- [ ] Seleccionar aleatoriamente **80 Pólizas digitales** — conjunto de entrenamiento
+- [ ] Anotar manualmente **80 Pólizas** — conjunto de entrenamiento
+- [ ] Anotar **40 Pólizas** (muestra aleatoria) — conjunto de validación sin augmentación
 
 #### Cámara de Comercio — Anotación Manual Reducida
 *Justificación: formato consistente entre cámaras, solo varía logo. Layout-aware chunking es viable.*
@@ -156,7 +170,7 @@
 - [ ] Test de regresión: verificar que ninguna entidad objetivo queda cortada entre dos chunks
 
 #### Construcción del Dataset Final
-- [ ] Construir función `chunk_document(doc, doc_type)` — el `doc_type` determina la estrategia internamente
+- [x] Construir función `chunk_document(pdf_path, doc_type)` *(Notebook 02 v2, Sección 5 + pipeline.py)* — estrategia determinada por tipología: sin_chunking (Cédula), layout_aware (CC), sliding_window (RUT/Póliza si >1800 tok)
 - [ ] Generar dataset JSONL final: `data/processed/train.jsonl` y `data/processed/val.jsonl`
 - [ ] Formato JSONL: `{"image_path": "...", "text_input": "...", "entities": [{...}], "doc_type": "...", "chunk_id": "...", "chunk_strategy": "..."}`
 
@@ -167,8 +181,8 @@
 - [ ] Verificar que augmentaciones no distorsionen entidades objetivo
 
 ### 2.5 Entregables de Fase 2
-- [ ] Notebook `02_preprocesamiento_pipeline.ipynb` ejecutado
-- [ ] Script `src/preprocessing/pipeline.py` — pipeline reproducible
+- [x] Notebook `02_preprocesamiento_pipeline.ipynb` ejecutado (22 celdas, 0 errores funcionales)
+- [x] Script `src/preprocessing/pipeline.py` — módulo de producción con todas las funciones
 - [ ] `data/processed/train.jsonl` (~2,400 ejemplos tras augmentación)
 - [ ] `data/processed/val.jsonl` (268 ejemplos sin augmentación)
 - [ ] Reporte de calidad del dataset: distribución de entidades, cobertura por tipología
@@ -478,6 +492,7 @@ SinergiaLabProyecto/
 *Actualizado: 2026-04-08 | Versión: 1.4 — Corrección chunking RUT tras enriquecimiento BPE*
 *Actualizado: 2026-04-08 | Versión: 1.5 — Revisión de tareas Fase 1: reclasificación y eliminación*
 *Actualizado: 2026-04-08 | Versión: 1.6 — Hallazgos de revisión visual de variantes de layout*
+*Actualizado: 2026-04-08 | Versión: 1.7 — Hallazgos de ejecución Notebook 02*
 
 **Cambios v1.1:**
 - `§1.2` PaddleOCR reemplaza Tesseract como OCR baseline (bounding boxes nativos)
@@ -511,3 +526,13 @@ SinergiaLabProyecto/
 - `§2.0` **Variantes completadas:** Cédula y RUT formato único; CC formato único con posible portada; Pólizas formato variable por aseguradora
 - `§2.1` **Detección de portada generalizada:** primer paso del pipeline para todas las tipologías (`lexicon < 50` Y `blocks < 5` en pág. 1 → portada → saltar a pág. 2)
 - `§2.2` **Anotación Pólizas estratificada por aseguradora:** los 80 docs de entrenamiento deben distribuirse proporcionalmente entre aseguradoras para cubrir variabilidad de layout
+
+**Cambios v1.7** *(hallazgos Notebook 02 — near-duplicates, vocabulario, portadas, aseguradoras — 2026-04-08)*:
+- `§2.0` **Near-duplicates completado:** 1 dup exacto en Cédula, 1 en RUT; umbral ajustado a ≥0.99 para RUT por falsos positivos de plantilla DIAN compartida
+- `§2.0` **Vocabulario completado — anomalía RUT:** términos CIIU (orgánicas, lata, frasco, congeladas) con 12k+ ocurrencias contaminan embeddings. Decisión: filtrar sección CIIU antes de indexar para fine-tuning
+- `§2.0` **Vocabulario Cédula — requiere investigación:** términos de CC en vocabulario de Cédula. Hipótesis: texto de carátulas SECOP detectadas como portada. Pendiente confirmar inspeccionando los 3 docs con portada
+- `§2.1` **Pipeline de preprocesamiento implementado:** `detect_cover → deskew → denoise → binarize → normalize_dpi` operativo en Notebook 02. Artefactos: `portadas_detectadas.json`
+- `§2.1` **Portadas validadas por muestra:** CC 10%, Pólizas 25%, Cédulas 15% (carátulas SECOP), RUT 0%
+- `§2.2` **Pólizas — estratificación eliminada:** las entidades objetivo son estándar del contrato colombiano (iguales en todas las aseguradoras). La identificación de aseguradora es dato informativo, no requisito para anotación. Selección: muestra aleatoria de Pólizas digitales.
+
+*Actualizado: 2026-04-08 | Versión: 1.7 — Hallazgos Notebook 02 + implementación pipeline.py + LFs RUT*

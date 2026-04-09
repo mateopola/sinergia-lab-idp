@@ -234,7 +234,8 @@ for cat, folder in CATEGORIES.items():
         freq = dict(zip(vec.get_feature_names_out(), X.toarray().sum(axis=0)))
 
         # Filtrar stopwords y quedarse con los 30 terminos mas especificos
-        terminos = {t: f for t, f in sorted(freq.items(), key=lambda x: -x[1])
+        # int() convierte numpy.int64 a int nativo para que json.dump no falle
+        terminos = {t: int(f) for t, f in sorted(freq.items(), key=lambda x: -x[1])
                     if not any(sw in t.split() for sw in STOPWORDS_ES)}
         top_terminos = dict(list(terminos.items())[:30])
         vocab_results[cat] = top_terminos
@@ -465,11 +466,11 @@ ASEGURADORAS_REGEX = [
     (r'(?i)bolivar',                 'Bolivar'),
     (r'(?i)allianz',                 'Allianz'),
     (r'(?i)liberty',                 'Liberty'),
-    (r'(?i)axa\s*colpatria',         'AXA Colpatria'),
+    (r'(?i)axa\\s*colpatria',         'AXA Colpatria'),
     (r'(?i)mapfre',                  'Mapfre'),
     (r'(?i)cardif',                  'Cardif'),
     (r'(?i)previsora',               'La Previsora'),
-    (r'(?i)mundial\s*de\s*seguros',  'Mundial de Seguros'),
+    (r'(?i)mundial\\s*de\\s*seguros',  'Mundial de Seguros'),
     (r'(?i)equidad',                 'La Equidad'),
     (r'(?i)state\s*farm',            'State Farm'),
     (r'(?i)chubb',                   'Chubb'),

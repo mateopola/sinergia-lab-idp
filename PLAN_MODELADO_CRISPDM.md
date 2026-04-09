@@ -110,6 +110,7 @@
   - `municipio`: lista de ciudades principales Colombia — 5/5 docs (municipio siempre "Cali" en muestra → revisar en corpus)
   - `representante_legal`: APELLIDOS NOMBRES antes de "Representante legal" — 5/5 docs correctos
   - **NOTA sobre `filtrar_ciiu_rut()`:** usar SOLO para embeddings/TF-IDF, NO para extracción NER. La función elimina tokens CIIU (orgánicas, lata, frasco) del texto para generar embeddings limpios.
+  - **Estructura del texto DIAN (hallazgo crítico para LFs):** PyMuPDF extrae el RUT en un orden no intuitivo: primero todos los LABELS del formulario (~1,500 chars de nombres de casillas), después los VALORES reales. Truncar el texto en el header "Actividad económica" (que aparece en la sección de labels) elimina todos los valores. Por eso `filtrar_ciiu_rut()` usa eliminación de tokens (no truncado) y las LFs operan sobre el texto completo sin filtrar.
 - [ ] Generar pre-anotaciones automáticas sobre los **235 RUT** (texto digital)
 - [ ] Cargar pre-anotaciones en Label Studio → revisión humana solo para corregir (no anotar desde cero)
 - [ ] Target: Cohen's Kappa > 0.85 en muestra de validación cruzada de 50 docs por tipología

@@ -93,20 +93,15 @@ sns.set_theme(style='whitegrid', font_scale=1.1)
 plt.rcParams.update({'figure.dpi': 120})
 np.random.seed(42)
 
-# Cargar reporte del EDA — intentar utf-8-sig primero, latin-1 como fallback
+# Cargar reporte del EDA (utf-8 sin BOM — formato estandar del proyecto)
 csv_path = DATA_PROC / 'quality_report_completo.csv'
-for enc in ('utf-8-sig', 'latin-1'):
-    try:
-        df_eda = pd.read_csv(csv_path, encoding=enc)
-        # Limpiar BOM del primer nombre de columna si persiste
-        df_eda.columns = [c.replace('\ufeff', '').strip() for c in df_eda.columns]
-        if 'filepath' in df_eda.columns:
-            break
-    except Exception:
-        continue
+df_eda = pd.read_csv(csv_path, encoding='utf-8')
+# Defensa extra: limpiar cualquier prefijo no ASCII en nombres de columna
+df_eda.columns = [''.join(c for c in col if c.isascii() and c.isprintable())
+                  for col in df_eda.columns]
+assert 'filepath' in df_eda.columns, f"Columna 'filepath' no encontrada. Columnas: {list(df_eda.columns[:5])}"
 
-print(f'CSV cargado ({enc}): {df_eda.shape[0]} documentos x {df_eda.shape[1]} columnas')
-print('Columnas:', list(df_eda.columns[:6]), '...')
+print(f'CSV cargado: {df_eda.shape[0]} documentos x {df_eda.shape[1]} columnas')
 print(df_eda['category'].value_counts().to_string())
 """))
 

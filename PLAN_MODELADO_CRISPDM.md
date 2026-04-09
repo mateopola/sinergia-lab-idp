@@ -54,17 +54,24 @@
 ## FASE 2 — PREPARACIÓN DE LOS DATOS (Data Preparation)
 
 ### 2.0 Tareas trasladadas desde Fase 1 (completar antes de preprocesar)
-- [ ] **Variantes regionales/institucionales:** revisar visualmente ~10 docs por tipología — ¿hay diferencias de layout entre emisores? (ej. Sura vs. Bolívar en Pólizas, Bogotá vs. Medellín en CC). Documentar variantes encontradas en `reports/variantes_layout.md`
+- [x] **Variantes regionales/institucionales:** revisión visual completada (2026-04-08). Hallazgos:
+  - **Cédula:** formato único — mismo layout en todo el corpus. Solo varía calidad de imagen.
+  - **RUT:** formato único — plantilla DIAN estándar. Solo varía el contenido de las casillas.
+  - **Cámara de Comercio:** formato único por cámara, pero **algunos documentos tienen portada** (página 1 = imagen corporativa sin datos). El pipeline debe detectar y saltar portadas antes de extraer texto.
+  - **Pólizas:** formato variable por aseguradora. Los 80 docs de anotación deben distribuirse proporcionalmente entre aseguradoras presentes en el corpus para cubrir la variabilidad de layout.
 - [ ] **Near-duplicates por embeddings:** calcular similitud coseno entre documentos del mismo tipo usando embeddings de texto PyMuPDF — detectar documentos casi idénticos que inflarían artificialmente el set de entrenamiento
 - [ ] **Vocabulario por dominio:** extraer los 200 términos más frecuentes por tipología del CSV existente (`quality_report_completo.csv`) — identificar términos DIAN, RUNT, Supersociedades que el tokenizador BPE fragmentará
 
 ### 2.1 Pipeline de Preprocesamiento Visual (OpenCV)
+> **Hallazgo v1.6:** algunos documentos tienen portada (pág. 1 = imagen corporativa sin datos). Confirmado en CC; puede aparecer en cualquier tipología. La detección de portada es el primer paso del pipeline, antes de cualquier extracción.
+
+- [ ] **Detección de portada (todas las tipologías):** si página 1 tiene `lexicon_count < 50` Y `pymupdf_blocks < 5` → portada → iniciar procesamiento desde página 2
 - [ ] Implementar función `deskew()`: corrección de rotación con minAreaRect
 - [ ] Implementar función `denoise()`: filtro gaussiano + Non-Local Means para escaneados ruidosos
 - [ ] Implementar función `binarize()`: umbralización adaptativa Otsu o Sauvola para fondos no uniformes
 - [ ] Implementar función `enhance_contrast()`: CLAHE (Contrast Limited Adaptive Histogram Equalization)
 - [ ] Implementar función `normalize_dpi()`: re-muestreo a 300 DPI estándar para documentos escaneados
-- [ ] Construir pipeline modular: `raw_image → deskew → denoise → binarize → normalize → processed_image`
+- [ ] Construir pipeline modular: `detect_cover → deskew → denoise → binarize → normalize → processed_image`
 - [ ] Guardar imágenes procesadas en `data/processed/images/` con nomenclatura estandarizada
 - [ ] Validar pipeline con muestra de 50 documentos y comparar métricas OCR antes/después
 
@@ -101,13 +108,22 @@
 - [ ] Usar las 60 anotaciones corregidas como seed para fine-tuning; escalar con augmentación 3x
 - [ ] **No** intentar regex LFs sobre el texto extraído por OCR — la tasa de error OCR invalida la estrategia automática
 
-#### Pólizas y Cámara de Comercio — Anotación Manual Reducida (MVP)
-*Justificación: layout variable entre emisores → LFs no son confiables; se reduce cuota para no bloquear cronograma.*
-- [ ] Anotar manualmente **80 documentos por tipología** (160 total) — conjunto de entrenamiento
+#### Pólizas — Anotación Manual Estratificada por Aseguradora
+> **Hallazgo v1.6:** Pólizas tienen layout variable por aseguradora. Los 80 docs de entrenamiento deben distribuirse proporcionalmente entre las aseguradoras presentes en el corpus — no tomar 80 docs de una sola.
+- [ ] Identificar aseguradoras presentes en el corpus (extraer campo `aseguradora` de los docs digitales con PyMuPDF)
+- [ ] Distribuir los 80 docs de entrenamiento proporcionalmente: si hay 5 aseguradoras → ~16 docs c/u
+- [ ] Anotar manualmente **80 Pólizas estratificadas** — conjunto de entrenamiento
+- [ ] Anotar **40 Pólizas** (proporcional por aseguradora) — conjunto de validación sin augmentación
+
+#### Cámara de Comercio — Anotación Manual Reducida
+*Justificación: formato consistente entre cámaras, solo varía logo. Layout-aware chunking es viable.*
+- [ ] Anotar manualmente **80 documentos** — conjunto de entrenamiento
   - *Reducido de 200 → 80: mínimo viable para fine-tuning con augmentación 3x aplicada posteriormente*
-- [ ] Anotar **40 documentos por tipología** (80 total) — conjunto de validación sin augmentación
+- [ ] Anotar **40 documentos** — conjunto de validación sin augmentación
+
+#### Configuración común
 - [ ] Configurar Label Studio con bounding boxes (BIO tagging para NER) para las 4 tipologías
-- [ ] Establecer revisión cruzada obligatoria sobre el 100% del set de validación (80 docs)
+- [ ] Establecer revisión cruzada obligatoria sobre el 100% del set de validación
 
 ### 2.3 Fragmentación Semántica — Chunking Quirúrgico por Tipología
 > **Decisión arquitectural v2:** Estrategia diferenciada por tipología según longitud real medida en EDA.
@@ -461,6 +477,7 @@ SinergiaLabProyecto/
 *Actualizado: 2026-04-08 | Versión: 1.3 — Hallazgos del EDA real del corpus integrados*
 *Actualizado: 2026-04-08 | Versión: 1.4 — Corrección chunking RUT tras enriquecimiento BPE*
 *Actualizado: 2026-04-08 | Versión: 1.5 — Revisión de tareas Fase 1: reclasificación y eliminación*
+*Actualizado: 2026-04-08 | Versión: 1.6 — Hallazgos de revisión visual de variantes de layout*
 
 **Cambios v1.1:**
 - `§1.2` PaddleOCR reemplaza Tesseract como OCR baseline (bounding boxes nativos)
@@ -489,3 +506,8 @@ SinergiaLabProyecto/
 - `§1.3` Rotaciones Hough → ya estaba en §2.1; nota aclaratoria añadida
 - `§1.4` Reporte HTML → **eliminada** (notebook + figuras PNG + CSV cumplen la función)
 - `§2.0` Nueva sección: agrupa las 3 tareas trasladadas como pre-requisitos de Fase 2
+
+**Cambios v1.6** *(hallazgos de revisión visual de variantes de layout — revisión humana 2026-04-08)*:
+- `§2.0` **Variantes completadas:** Cédula y RUT formato único; CC formato único con posible portada; Pólizas formato variable por aseguradora
+- `§2.1` **Detección de portada generalizada:** primer paso del pipeline para todas las tipologías (`lexicon < 50` Y `blocks < 5` en pág. 1 → portada → saltar a pág. 2)
+- `§2.2` **Anotación Pólizas estratificada por aseguradora:** los 80 docs de entrenamiento deben distribuirse proporcionalmente entre aseguradoras para cubrir variabilidad de layout

@@ -472,7 +472,7 @@ ASEGURADORAS_REGEX = [
     (r'(?i)previsora',               'La Previsora'),
     (r'(?i)mundial\\s*de\\s*seguros',  'Mundial de Seguros'),
     (r'(?i)equidad',                 'La Equidad'),
-    (r'(?i)state\s*farm',            'State Farm'),
+    (r'(?i)state\\s*farm',            'State Farm'),
     (r'(?i)chubb',                   'Chubb'),
     (r'(?i)zurich',                  'Zurich'),
     (r'(?i)generali',                'Generali'),

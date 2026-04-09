@@ -190,6 +190,61 @@
 
 ---
 
+## DECISIONES ARQUITECTURALES — ALTERNATIVAS EVALUADAS
+
+> *Esta sección registra rutas alternativas que la literatura sugiere y que se evaluaron conscientemente antes de adoptar el diseño actual. Se anotan para no perderlas y para revisitar si el diseño actual no alcanza los umbrales de F1 objetivo.*
+
+### ALT-1 — Donut (Document Understanding Transformer)
+**Qué es:** modelo end-to-end de NAVER (2022) que procesa la imagen del documento directamente y produce JSON estructurado, sin OCR como paso separado.
+
+**Por qué aparece en literatura de IDP:** colapsa el pipeline OCR → LLM en un solo paso. Funciona bien para documentos de formato fijo (recibos, facturas, formularios).
+
+**Por qué no se adoptó:**
+- El corpus tiene 4 tipologías con estructuras radicalmente distintas — requeriría 4 modelos Donut separados
+- El 70-91% de RUT, CC y Pólizas son PDFs digitales con texto extraíble gratis vía PyMuPDF — usar Donut ignora esa ventaja
+- El modelo base fue entrenado en inglés; vocabulario jurídico colombiano requiere fine-tuning costoso desde cero
+- No escala bien a documentos multipágina (CC de 8-12 páginas)
+
+**Cuándo revisitar:** si la tasa de error en Cédulas (93% escaneadas) es inaceptable después de la Fase 4. Para ese caso específico — imágenes de ID con layout fijo y entidades estandarizadas — Donut sería una alternativa válida.
+
+---
+
+### ALT-2 — LayoutLMv3 (Microsoft, 2022)
+**Qué es:** modelo multimodal pre-entrenado que recibe simultáneamente texto + coordenadas de bounding box + imagen de cada bloque. Estado del arte en benchmarks de document NER (FUNSD, CORD, DocVQA).
+
+**Por qué es relevante para este corpus:**
+- El RUT tiene 97 bloques por página en un formulario DIAN denso. La posición espacial de cada campo (qué está arriba, qué está al lado) es información crítica que PyMuPDF → texto plano → Llama 3 pierde completamente.
+- Para RUT y CC (layout fijo), LayoutLMv3 fine-tuneado probablemente supera a Llama 3 8B en F1, con inferencia 10x más rápida y sin riesgo de alucinación (es un modelo discriminativo que clasifica tokens, no genera texto).
+
+**Comparación directa con el diseño actual:**
+
+| Criterio | Diseño actual (OCR → Llama 3) | LayoutLMv3 |
+|---|---|---|
+| Aprovecha layout espacial | No — texto plano | Sí — bounding boxes nativos |
+| Riesgo de alucinación | Alto | Bajo (discriminativo) |
+| Tamaño del modelo | 8B params (~5GB VRAM en 4-bit) | 125M params (<1GB VRAM) |
+| Velocidad inferencia | ~5-15s/doc | <1s/doc |
+| Funciona para Pólizas | Sí — layout variable | No — necesita layout consistente |
+| Complejidad de anotación | Texto span | Bounding boxes por token (más trabajo) |
+
+**Por qué no se adoptó como diseño principal:**
+- Requiere anotar con coordenadas espaciales en Label Studio (más trabajo por documento)
+- Para Pólizas (layout variable por aseguradora), LayoutLMv3 no es adecuado — el diseño actual con Llama 3 sigue siendo la mejor opción para esa tipología
+- El proyecto ya tiene invertido el flujo de anotación en texto span
+
+**Recomendación de revisión:** si en Fase 4 (evaluación) los experimentos muestran F1 < 0.85 en RUT o CC, considerar reemplazar la Etapa A (Arctic-Extract) por LayoutLMv3 fine-tuneado. Sería el Experimento 6 adicional.
+
+**Para incorporar como Experimento 6 (opcional):**
+```python
+# Fine-tuning LayoutLMv3 para RUT
+from transformers import LayoutLMv3ForTokenClassification, LayoutLMv3Processor
+# Requiere: anotaciones con bounding boxes por token
+# Datos mínimos: ~100-150 RUT anotados con coordenadas
+# Inferencia: processor(image, text, boxes) → logits por token
+```
+
+---
+
 ## FASE 3 — MODELADO (El Núcleo)
 
 ### 3.1 Arquitectura de Dos Etapas

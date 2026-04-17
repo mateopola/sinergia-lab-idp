@@ -103,15 +103,22 @@ El OCR trabaja mejor sobre imagenes **limpias, derechas, bien contrastadas y con
 | `deskew` | Documentos escaneados rotados ±5-15° | Correccion de angulo con `cv2.minAreaRect` |
 | `denoise` | Ruido de escaner (especialmente en cedulas viejas) | `cv2.fastNlMeansDenoising` |
 | `enhance_contrast` (CLAHE) | Paginas con iluminacion despareja | Ecualizacion adaptativa local |
-| `binarize` | Fondo no uniforme dificulta detectar bordes de texto | Otsu umbralizacion adaptativa |
 | `normalize_dpi` | Escaneos en 150 DPI mezclados con nativos 72 DPI | Resample a 300 DPI estandar |
+
+### ⚠️ Importante: NO aplicamos `binarize` (Otsu)
+
+El pipeline original del Notebook 02 incluia `binarize` (umbralizacion Otsu → imagen 0/255 pura). Lo **quitamos de este notebook** tras descubrir el 2026-04-17 que:
+
+- **EasyOCR es deep learning** (CRAFT para deteccion + CRNN para reconocimiento). Sus modelos fueron entrenados con imagenes naturales (grayscale con gradientes, no binarias puras).
+- Enviar una imagen binarizada al detector CRAFT multiplica el tiempo de inferencia **~5x** (de ~20 s/pagina a ~110 s/pagina medido el 2026-04-17). Lo que para el corpus completo significa ~51 horas en lugar de ~12.
+- La binarizacion era convencion para **OCR clasicos tipo Tesseract** (90s). Con motores deep learning modernos, el grayscale con CLAHE (contraste mejorado, sin umbralizar) funciona mejor.
+
+**Pipeline final adoptado:** `deskew → denoise → enhance_contrast (CLAHE) → normalize_dpi`. Output: imagen grayscale de 300 DPI.
 
 **Evidencia del corpus (Fase 1):**
 - 428 docs escaneados (42%) con variabilidad fuerte de calidad visual
 - Cedulas: 93% escaneadas, muchas con hologramas y bajo contraste
 - Hallazgo v1.6: algunos CC y Polizas tienen **portada corporativa** en pagina 1 (detectada y saltada para esas tipologias, NO para Cedulas ni RUT).
-
-**Nota sobre PDFs digitales:** los 586 digitales tambien se renderizan a imagen por uniformidad, aunque su texto se extraera via PyMuPDF (texto nativo) en el Notebook 05. La imagen queda disponible por si el NER posterior necesita usar bboxes.
 """))
 
 
@@ -332,8 +339,11 @@ Importamos las funciones ya definidas y validadas en el Notebook 02, ahora empaq
 El pipeline del nb 02 (`preprocess_pipeline`) procesa SOLO la primera pagina util. Aqui necesitamos procesar **todas las paginas** del PDF, asi que componemos las funciones individuales en un helper `process_page(...)` definido abajo.
 """))
 
-cells.append(code("""from src.preprocessing.pipeline import (
-    deskew, denoise, enhance_contrast, binarize, normalize_dpi,
+cells.append(code("""# NOTA: importamos 'binarize' de pipeline.py pero NO lo usamos en process_page.
+# Razon: ralentiza EasyOCR ~5x (ver seccion "¿Por que preprocesar antes del OCR?"
+# arriba en este notebook).
+from src.preprocessing.pipeline import (
+    deskew, denoise, enhance_contrast, normalize_dpi,
     detectar_portada, TIPOLOGIAS_CON_PORTADA,
 )
 
@@ -382,14 +392,16 @@ pdf_page_to_image = load_page_as_image
 def process_page(img_rgb: np.ndarray, source_dpi: int = RENDER_DPI) -> np.ndarray:
     \"\"\"Aplica el pipeline visual a una sola imagen RGB.
 
-    Flujo: gray -> deskew -> denoise -> enhance_contrast -> binarize
-           -> vuelve a RGB -> normalize_dpi a 300 DPI
+    Flujo: gray -> deskew -> denoise -> enhance_contrast (CLAHE) -> RGB -> normalize_dpi
+
+    IMPORTANTE: no aplicamos binarize (Otsu) porque ralentiza EasyOCR ~5x.
+    La salida es grayscale replicado a 3 canales, NO binario puro. Ver seccion
+    "¿Por que preprocesar antes del OCR?" de este notebook para el detalle.
     \"\"\"
     img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2GRAY)
     img_gray = deskew(img_gray)
     img_gray = denoise(img_gray)
     img_gray = enhance_contrast(img_gray)
-    img_gray = binarize(img_gray)
     img_clean = cv2.cvtColor(img_gray, cv2.COLOR_GRAY2RGB)
     img_clean = normalize_dpi(img_clean, source_dpi=source_dpi)
     return img_clean
@@ -484,7 +496,7 @@ cells.append(code("""def procesar_pagina(row) -> dict:
             'page_num':               int(row['page_num']),
             'n_pages_total':          int(row['n_pages']),
             'es_escaneado':           bool(row['es_escaneado']),
-            'ruta_imagen_procesada':  str(out_path),
+            'ruta_imagen_procesada':  str(out_path.resolve()),
             'width':                  int(w),
             'height':                 int(h),
             'preprocess_elapsed_s':   round(elapsed, 3),
@@ -690,9 +702,13 @@ cells.append(md("""## Resultados de la corrida productiva
 
 1. **Primera corrida: disco lleno.** El notebook procesaba los 1,014 docs (incluyendo digitales) y saturo el disco (10.4 GB). Se aplico **fix arquitectural** — solo procesar escaneados — reduciendo de 14 GB estimado a 1.9 GB reales.
 
-2. **Bug: bloques sobreescritos.** El naming `image_bloque_NNNN.csv` empezaba desde 0001 en cada re-ejecucion, sobreescribiendo bloques previos. Se perdieron 50 filas del manifest en una re-corrida. **Arreglado:** ahora el numero de bloque continua desde el ultimo existente (ver celda del loop). El manifest se reconstruyo escaneando los JPGs en disco.
+2. **Bug: bloques sobreescritos.** El naming `image_bloque_NNNN.csv` empezaba desde 0001 en cada re-ejecucion, sobreescribiendo bloques previos. **Arreglado:** el numero de bloque continua desde el ultimo existente.
 
-3. **Docs en formato imagen directa.** 9 cedulas/RUT/TP estan en el corpus como `.jpg`/`.jpeg`, no como PDF. El codigo inicial solo indexaba `.pdf`. **Arreglado:** ahora se indexan `.pdf`, `.jpg`, `.jpeg`, `.png`, y la funcion `load_page_as_image()` decide entre `fitz.open` (PDFs) y `cv2.imread` (imagenes directas).
+3. **Docs en formato imagen directa.** 9 cedulas/RUT/TP estan en el corpus como `.jpg`/`.jpeg`, no como PDF. **Arreglado:** ahora se indexan `.pdf`, `.jpg`, `.jpeg`, `.png`, y la funcion `load_page_as_image()` discrimina por extension.
+
+4. **Rutas relativas en manifest.** Las rutas se guardaban relativas al root, pero nb 05 corre desde `notebooks/` y no las encontraba. **Arreglado:** `str(out_path.resolve())` al escribir + fix defensivo en nb 05 que resuelve rutas relativas.
+
+5. **CRITICO: binarizacion ralentiza EasyOCR 5x.** (2026-04-17) Corrida de 1h54m procesa solo 68/1669 paginas (~110 s/pag). Benchmark del nb 03 habia dado ~20 s/pag. Diagnostico: las imagenes binarizadas (20-32 valores unicos, casi 0/255 puro) confunden al detector CRAFT de EasyOCR, que espera grayscale con gradientes. **Fix de raiz:** se elimino `binarize()` del pipeline. Pipeline final: `deskew → denoise → CLAHE → normalize_dpi` (output grayscale de 300 DPI, sin umbralizacion).
 
 ### Observacion pendiente
 

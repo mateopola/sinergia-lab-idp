@@ -109,6 +109,7 @@ Cada notebook incluye celdas de validación al final. Checks típicos:
 | Decisión | Ubicación | Resumen |
 |---|---|---|
 | **EasyOCR como motor OCR** | `OCR_BENCHMARK.md` §2 | Ganador del benchmark contra Tesseract. Con GPU: unificado. En CPU: selector híbrido (EasyOCR para Cédula; Tesseract para RUT/Póliza/CC). Este repo corre CPU con EasyOCR unificado. |
+| **NO binarizar antes de EasyOCR** | `OCR_BENCHMARK.md` §2.6.0 + `PLAN_MODELADO_CRISPDM.md` §2.1.3 | Binarize (Otsu) ralentiza EasyOCR 5× (de ~20 s/pág a ~110 s/pág). EasyOCR es deep learning y prefiere grayscale con CLAHE, no binario puro. El pipeline final omite `binarize()`. |
 | **Preprocesamiento visual solo para escaneados** | `notebooks/04_preprocesamiento_imagenes.ipynb` | Los 548 PDFs digitales van directo a PyMuPDF, no pasan por OpenCV. Ahorra 12 GB de disco. |
 | **Chunking diferenciado por tipología** | `PLAN_MODELADO_CRISPDM.md` §2.3 | Cédula: sin chunking. RUT/Póliza: sliding window 512 tokens / 30% overlap. CC: layout-aware con HoughLinesP. |
 | **Gold seed 15 docs ahora / gold extendido 70 docs en Fase 4** | `PLAN_MODELADO_CRISPDM.md` §2.1.2 | El seed de 15 cubre benchmark OCR y validación de LFs. El extendido a 70 solo si F1 requiere más rigor estadístico. |

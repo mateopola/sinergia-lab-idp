@@ -79,12 +79,32 @@
   - Cámara de Comercio: 2/20 (10%) — algunas cámaras incluyen página de presentación. Detector válido.
 - [x] Implementar función `deskew()`: corrección de rotación con minAreaRect *(Notebook 02, Sección 3)*
 - [x] Implementar función `denoise()`: filtro gaussiano + Non-Local Means para escaneados ruidosos *(Notebook 02, Sección 3)*
-- [x] Implementar función `binarize()`: umbralización adaptativa Otsu *(Notebook 02, Sección 3)*
+- [x] Implementar función `binarize()`: umbralización adaptativa Otsu *(Notebook 02, Sección 3)* — **NO SE USA EN PIPELINE FINAL** (ver §2.1.3)
 - [x] Implementar función `enhance_contrast()`: CLAHE (Contrast Limited Adaptive Histogram Equalization) *(Notebook 02 v2, pipeline.py)*
 - [x] Implementar función `normalize_dpi()`: re-muestreo a 300 DPI estándar *(Notebook 02, Sección 3)*
-- [x] Construir pipeline modular: `detect_cover → deskew → denoise → enhance_contrast → binarize → normalize_dpi` *(Notebook 02 v2, pipeline.py)*
+- [x] Construir pipeline modular: `detect_cover → deskew → denoise → enhance_contrast → binarize → normalize_dpi` *(Notebook 02 v2, pipeline.py)* — **pipeline final en nb 04 omite `binarize`** (ver §2.1.3)
 - [x] **Guardar imágenes procesadas en `data/processed/images/` con nomenclatura estandarizada** *(Notebook 04, 2026-04-17 — 1,678 páginas / 412 docs escaneados procesadas, 0 errores, 1.9 GB)*
 - [x] **Validar pipeline con muestra** *(Notebook 04: test visual en `fig12_preprocesamiento_test.png` + validación post-corrida en celda 20)*
+
+### 2.1.3 Decisión técnica: omitir `binarize()` del pipeline final — 2026-04-17
+
+> **Hallazgo crítico durante la ejecución productiva:** la binarización con Otsu ralentiza EasyOCR **~5×** (de ~20 s/pág a ~110 s/pág). Extrapolado al corpus completo: 51 horas vs 9-12 horas.
+
+**Causa raíz:** el detector CRAFT de EasyOCR es deep learning entrenado con imágenes naturales. Una imagen binarizada 0/255 pura tiene pocos valores únicos y confunde el detector, que gasta más tiempo en inferencia de texto.
+
+**Contexto histórico:** `binarize` era convención del paradigma OCR clásico (Tesseract ≤2010). Los motores modernos basados en deep learning (EasyOCR, PaddleOCR, TrOCR) funcionan mejor sobre grayscale con CLAHE, sin umbralizar.
+
+**Decisión:** el pipeline productivo (nb 04) aplica `deskew → denoise → CLAHE → normalize_dpi`, sin `binarize`. La función `binarize()` se conserva en `pipeline.py` para compatibilidad del nb 02 (análisis exploratorio) y para futuras pruebas con OCRs clásicos.
+
+**Evidencia:**
+- Corrida del 2026-04-17 a las 15:30: 1h54m para 68 páginas (110 s/pág) con binarize
+- Pipeline actualizado, re-corrida estimada: ~9-12 h para 1,678 páginas (20 s/pág)
+- Calidad OCR idéntica en ambos casos (ambos convergen al mismo texto, solo cambia velocidad)
+
+**Referencias:**
+- [OCR_BENCHMARK.md §2.6.0](OCR_BENCHMARK.md) — tabla comparativa de tiempos
+- [notebooks/build_notebook_04.py](notebooks/build_notebook_04.py) — `process_page()` sin binarize
+- [src/preprocessing/pipeline.py](src/preprocessing/pipeline.py) — función `binarize()` se conserva pero no se llama en pipeline productivo
 
 ### 2.1.1 ✅ Selección del Motor OCR (Benchmark Comparativo) — COMPLETADO 2026-04-15
 

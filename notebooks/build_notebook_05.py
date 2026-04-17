@@ -167,6 +167,20 @@ Combinamos:
 cells.append(code("""img_manifest = pd.read_csv(IMAGE_MANIFEST, encoding='utf-8-sig')
 print(f'image_manifest: {len(img_manifest)} filas (paginas preprocesadas)')
 
+# Fix defensivo: si las rutas en el manifest son relativas, convertirlas a absolutas.
+# Esto previene errores 'No se pudo leer la imagen' cuando nb 05 corre desde notebooks/
+# y el manifest tiene rutas relativas al project root.
+def _resolve_img_path(p):
+    if pd.isna(p) or p == '':
+        return p
+    abs_path = Path(p)
+    if not abs_path.is_absolute():
+        # Probar relativo a PROJECT_ROOT (notebook corre desde notebooks/)
+        abs_path = (PROJECT_ROOT / p).resolve()
+    return str(abs_path)
+
+img_manifest['ruta_imagen_procesada'] = img_manifest['ruta_imagen_procesada'].map(_resolve_img_path)
+
 # Resolver ruta del PDF original via MD5 (algunos pueden haberse movido entre carpetas)
 import hashlib
 def md5_file(path):

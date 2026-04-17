@@ -171,6 +171,32 @@ Figura: `data/processed/fig11_ocr_benchmark.png` (barras CER + scatter CER vs ti
 Normalización previa a CER/WER: lowercase + colapso de whitespace.
 Regex de entidades: NIT `\b\d{8,10}[-\s]?\d\b`, Cédula `\b\d{1,3}(?:[.\s]\d{3}){2,3}\b`, Fecha `\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b`, Monto `\$\s?\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{1,2})?`.
 
+### 2.6.0 Decisión técnica crítica: NO binarizar para EasyOCR
+
+**Fecha:** 2026-04-17
+**Hallazgo:** el paso `binarize()` (Otsu) del pipeline ralentiza EasyOCR **~5× más** que sin binarización.
+
+| Métrica | Con binarize | Sin binarize |
+|---|---|---|
+| s/página (CPU) | ~110 s | ~20 s |
+| Total corpus (1,678 páginas escaneadas) | **~51 horas** | **~9-12 horas** |
+| Calidad OCR | Idéntica | Idéntica |
+
+**Causa:** EasyOCR usa el detector CRAFT (deep learning). CRAFT fue entrenado con imágenes naturales que tienen gradientes suaves. Una imagen binarizada 0/255 pura tiene solo ~20-32 valores únicos en los bordes JPG — CRAFT no la procesa de forma eficiente y gasta más tiempo en detección de texto.
+
+**Contexto histórico:** el paso `binarize` se heredó del paradigma OCR clásico (Tesseract, 90s-2000s) donde Otsu mejoraba precisión. Para motores deep learning modernos (EasyOCR, PaddleOCR, TrOCR) este paso es **contraproducente**.
+
+**Pipeline final adoptado (`src/preprocessing/pipeline.py` + nb 04):**
+```
+deskew → denoise → enhance_contrast (CLAHE) → normalize_dpi (300 DPI)
+```
+Output: imagen **grayscale** (no binaria) replicada a 3 canales.
+
+**Impacto en código:**
+- `src/preprocessing/pipeline.py` — función `binarize()` se mantiene para compatibilidad (nb 02 la prueba), pero no se llama desde `preprocess_pipeline()` ni desde nb 04.
+- `notebooks/build_notebook_04.py` — `binarize` eliminado del import usado en `process_page()`.
+- Cambio registrado en celda "Resultados" del nb 04 (hallazgo #5).
+
 ### 2.6.1 Ejecución productiva — Notebook 04 (preprocesamiento visual)
 
 **Fecha:** 2026-04-17

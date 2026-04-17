@@ -86,6 +86,93 @@
 - [ ] Guardar imágenes procesadas en `data/processed/images/` con nomenclatura estandarizada
 - [ ] Validar pipeline con muestra de 50 documentos y comparar métricas OCR antes/después
 
+### 2.1.1 ✅ Selección del Motor OCR (Benchmark Comparativo) — COMPLETADO 2026-04-15
+
+> **Ejecutado y decidido.** Ver detalles en [OCR_BENCHMARK.md](OCR_BENCHMARK.md) y notebook [notebooks/03_benchmark_ocr.ipynb](notebooks/03_benchmark_ocr.ipynb).
+
+**Motores evaluados:**
+| Motor | Rol |
+|---|---|
+| PyMuPDF | Extractor nativo (no OCR) — usado siempre si `es_escaneado == False` |
+| EasyOCR 1.7.2 | OCR deep learning |
+| Tesseract 5.5.0 | OCR clásico LSTM |
+| ~~PaddleOCR~~ | Descartado (incompatible con Python 3.12) |
+| ~~Donut~~ | No es OCR — descartado como arquitectura global en §ALT-1 |
+
+**Métricas calculadas (sobre 15 docs escaneados, 36 páginas transcritas manualmente):**
+- `CER` — Character Error Rate (Levenshtein a nivel carácter, menor = mejor)
+- `WER` — Word Error Rate (nivel palabra, menor = mejor)
+- `entity_recall` — % de entidades NIT/cédula/fecha/monto recuperadas (mayor = mejor) — **métrica clave para este proyecto porque el objetivo es NER, no transcripción**
+- `s_per_page` — tiempo por página (restricción de la regla de decisión)
+
+**Resultados globales:**
+
+| Motor | CER | WER | Entity recall | s/pág |
+|---|---|---|---|---|
+| EasyOCR (CPU) | **0.276** | 0.476 | 0.551 | 46.02 |
+| Tesseract | 0.446 | 0.557 | **0.605** | **5.06** |
+
+**Resultados por tipología:**
+
+| Tipología | Ganador | Justificación |
+|---|---|---|
+| Cédula | 🏆 EasyOCR | Tesseract colapsa (CER 0.78) en IDs físicos con hologramas/columnas |
+| RUT | Empate (entity 0.89 ambos); Tesseract gana por velocidad (10× más rápido) |
+| Póliza | 🏆 Tesseract | Mejor CER (0.23 vs 0.33) y entity_recall (0.95 vs 0.65) |
+| Cámara de Comercio | 🏆 Tesseract | Dominante: CER 0.05, entity_recall 0.96 |
+
+**Decisión final — CPU only (laboratorio actual):**
+```python
+def select_ocr(tipologia):
+    return 'easyocr' if tipologia == 'Cedula' else 'tesseract'
+```
+
+**Recomendación con GPU (mediano plazo):** EasyOCR unificado. Razones:
+- GPU reduce EasyOCR de ~46 s/pág → ~1 s/pág (40× más rápido) → supera la restricción de tiempo.
+- Pipeline más simple (sin clasificación previa de tipología).
+- Elimina el talón de Aquiles de Tesseract en Cédulas (33% del corpus).
+- Re-OCR corpus completo: ~20 h CPU → ~30 min GPU.
+
+**Tareas completadas:**
+- [x] Instalar Tesseract 5 + pytesseract + jiwer + modelo `spa.traineddata`
+- [x] Implementar benchmark en notebook `03_benchmark_ocr.ipynb` (Secciones D, E, F)
+- [x] Cálculo de CER/WER con `jiwer` contra transcripciones del gold
+- [x] Ejecutar benchmark y generar `data/processed/ocr_benchmark.csv` + `ocr_benchmark_summary.csv` + `fig11_ocr_benchmark.png`
+- [x] Documentar decisión en [OCR_BENCHMARK.md](OCR_BENCHMARK.md) Parte 2 y en Sección G del notebook
+
+**Tareas pendientes (transición a Fase 2 §2.2):**
+- [ ] Implementar `select_ocr(tipologia)` en [src/preprocessing/pipeline.py](src/preprocessing/pipeline.py) reemplazando el default EasyOCR
+- [ ] Gestionar acceso a GPU con PUJ/el laboratorio
+
+### 2.1.2 Gold Standard (verdad absoluta para evaluación)
+> **Qué es:** conjunto reducido de documentos anotados manualmente con máxima rigurosidad, usado como referencia inmutable para medir OCR, LFs y modelo NER final. Sin gold no se puede responder "¿funciona mi modelo?".
+
+**Composición propuesta (~70 docs):**
+| Tipología | Docs | Criterio de selección |
+|---|---|---|
+| Cédula | 20 | 10 alta calidad + 10 ruidosas (estratificado por `blur_score`) |
+| RUT | 15 | 10 digitales + 5 escaneados |
+| Pólizas | 20 | 4 por aseguradora (top 5 aseguradoras del corpus) |
+| Cámara de Comercio | 15 | Distribuidas entre cámaras presentes |
+
+**Reglas:**
+- Doble anotación (2 revisores) + resolución de discrepancias → Cohen's Kappa ≥ 0.85
+- Inmutable tras validación: no entra al training, no se modifica durante el desarrollo
+- Contiene: PDF + transcripción textual perfecta + entidades con bounding boxes + metadatos
+
+**Tareas:**
+- [ ] Definir esquema JSON del gold (extensión del esquema de §2.2 + transcripción completa)
+- [ ] Implementar `src/gold/sample_selector.py` — selección estratificada reproducible (seed fija)
+- [ ] Estructura en disco: `data/gold/{tipologia}/{doc_id}.json` + `data/gold/gold_manifest.csv`
+- [ ] Anotar 70 docs en Label Studio (doble revisor) y medir Kappa
+- [ ] Congelar v1.0 del gold con hash SHA-256 para trazabilidad
+
+**Usos a lo largo del proyecto:**
+1. Benchmark OCR (§2.1.1) ← uso inmediato
+2. Validación de LFs de RUT (§2.2)
+3. Evaluación F1 del modelo NER final (Fase 4)
+4. Reporte de métricas finales al cliente/tesis
+
 ### 2.2 Estrategia de Etiquetado y Curación (Weak Supervision + Revisión Humana)
 > **Decisión arquitectural v2:** Reemplaza la anotación manual completa (800 docs) por un pipeline de
 > pre-anotación automática + corrección humana. Reduce el trabajo de anotación ~70% sin envenenar el ground truth.

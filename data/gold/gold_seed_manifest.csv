@@ -1,0 +1,16 @@
+﻿local_path,filename,folder,gold_bucket,n_pages,pages_to_use,brightness,contrast,blur_score,quality_label,md5
+..\data\raw\CEDULA\23 cc.pdf,23 cc.pdf,CEDULA,CEDULA_alta,1,1,223.38,51.87,790.6,APTO,f16d9aee4a6f591d05938033111234b9
+..\data\raw\CEDULA\cc Jonathan Blanco.pdf,cc Jonathan Blanco.pdf,CEDULA,CEDULA_alta,1,1,244.7,40.78,3592.8,APTO,fabe64599fde355a23c3c3472b7a976a
+..\data\raw\CEDULA\CC Yerlis cabarcas.pdf,CC Yerlis cabarcas.pdf,CEDULA,CEDULA_alta,1,1,236.42,34.94,155.49,APTO,9401f3dadda7dca0e7b16863eb441383
+..\data\raw\CEDULA\4. CEDULA PAULA ANDREA CASTAÑO ZULUAGA.pdf,4. CEDULA PAULA ANDREA CASTAÃÂO ZULUAGA.pdf,CEDULA,CEDULA_ruidosa,2,2,249.66,15.93,93.92,REQUIERE_PREPROCESAMIENTO,8f9c203529f8b94854702d107fb6d14e
+..\data\raw\CEDULA\cc Julieth Payares.pdf,cc Julieth Payares.pdf,CEDULA,CEDULA_ruidosa,1,1,219.38,49.84,85.51,REQUIERE_PREPROCESAMIENTO,65d780889f4a0f7acce68307956df4c0
+..\data\raw\CEDULA\28 cedula (2).pdf,28 cedula (2).pdf,CEDULA,CEDULA_ruidosa,1,1,216.31,39.34,84.93,REQUIERE_PREPROCESAMIENTO,5e99f2d982274f83e5ec490c388b4c12
+..\data\raw\rut\RUT GESTIVA.pdf,RUT GESTIVA.pdf,rut,rut_cualquiera,4,4,239.86,35.16,1827.61,APTO,e1b6c724a4f51ac46361c17a4f47aece
+..\data\raw\rut\RUT ASOVITAL.pdf,RUT ASOVITAL.pdf,rut,rut_cualquiera,1,1,240.14,33.45,1581.87,APTO,06b2b365bcd00c7d81a671bf7e0dc809
+..\data\raw\rut\3. RUT - 05-03-26 - COMPLETO.pdf,14. RUT La Previsora S.A. 05-03-26 - Completo.pdf,rut,rut_cualquiera,16,4,237.14,50.3,10471.88,APTO,4482ddc566c942761eb66b1328be8308
+..\data\raw\POLIZA\0. POLIZA .pdf,0. POLIZA .pdf,POLIZA,POLIZA_cualquiera,14,4,230.15,53.66,2107.75,APTO,a56d61bce22c077ad0955d452d1d4f16
+..\data\raw\POLIZA\2-29 Garantia de Seriedad del Ofrecimiento.pdf,2-29 Garantia de Seriedad del Ofrecimiento.pdf,POLIZA,POLIZA_cualquiera,3,3,208.55,63.32,2889.96,APTO,4382dfbcf49c195d32a17908c1ae239e
+..\data\raw\POLIZA\POLIZA DE SERIEDAD 21-44-101492068_FIRMADA _1.pdf,POLIZA DE SERIEDAD 21-44-101492068_FIRMADA _1.pdf,POLIZA,POLIZA_cualquiera,14,4,236.9,56.3,2971.02,APTO,e04596f344ad17e98fad078514c8b210
+..\data\raw\CAMARA DE CIO\04. Cámara de Comercio Solidaria Manizales.pdf,04. CÃÂ¡mara de Comercio Solidaria Manizales.pdf,CAMARA DE CIO,CAMARA DE CIO_cualquiera,5,4,247.16,35.92,5468.24,APTO,d171a7adedfcb63fed127d7898d66784
+..\data\raw\CAMARA DE CIO\camara de comercio 23 oct 2025 - ISVI.pdf,camara de comercio 23 oct 2025 - ISVI.pdf,CAMARA DE CIO,CAMARA DE CIO_cualquiera,15,4,248.23,33.7,4753.5,APTO,e8835eefd64151dd1fce0bfbc796e7ee
+..\data\raw\CAMARA DE CIO\CERTIFICADO CAMARA COMERCIO ene2026 MAX.pdf,CERTIFICADO CAMARA COMERCIO ene2026 MAX.pdf,CAMARA DE CIO,CAMARA DE CIO_cualquiera,6,4,247.47,34.16,5684.54,APTO,5fb3ea6371a252b08ce47d049f1ef03d

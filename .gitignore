@@ -9,11 +9,13 @@ data/processed/quality_report_completo.csv
 # ─── Modelos y checkpoints (archivos grandes) ────────────────────────────────
 models/
 checkpoints/
+tessdata/
 *.gguf
 *.bin
 *.safetensors
 *.pt
 *.pth
+*.traineddata
 
 # ─── Python ──────────────────────────────────────────────────────────────────
 __pycache__/

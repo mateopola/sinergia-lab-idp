@@ -1,0 +1,94 @@
+Formulario del Registro Único Tributario
+Hoja Principal
+
+2. Concepto: 0 2  Actualización
+4. Número de formulario: 14235322614
+
+(415)7707212489984(8020)0000014235322614
+
+5. Número de Identificación Tributaria (NIT): 9 0 0 2 8 0 7 5 7
+6. DV: 1
+12. Dirección seccional: Impuestos de Cúcuta
+14. Buzón electrónico: 7
+
+IDENTIFICACION
+
+24. Tipo de contribuyente: Persona jurídica
+25. Tipo de documento: 1
+26. Número de Identificación:
+27. Fecha expedición:
+28. País:
+29. Departamento:
+30. Ciudad/Municipio:
+Lugar de expedición
+31. Primer apellido:
+32. Segundo apellido:
+33. Primer nombre:
+34. Otros nombres:
+35. Razón social: ASOCIACION MUTUAL ASOVITAL
+36. Nombre comercial: ASOCIACION MUTUAL ASOVITAL
+37. Sigla: ASOVITAL
+
+UBICACION
+
+38. País: COLOMBIA
+39. Departamento: 1 6 9  Norte de Santander
+40. Ciudad/Municipio: 5 4  Pamplona
+41. Dirección: 5 1 8
+(!) TERMINAL DE TRANSPORTES OF 35 CR 9  3  120 BRR EL CAMELLON
+42. Correo electrónico: asovitalcom@gamil.com
+43. Apartado aéreo:
+44. Teléfono 1: 5 6 8 8 6 7 2 2
+45. Teléfono 2: 3 1 7 6 7 0 4 7 3 8
+
+CLASIFICACION
+
+Actividad económica                                          Ocupación
+
+Actividad principal          Actividad secundaria          Otras actividades
+46. Código: 6 6 2 1
+47. Fecha inicio actividad: 2 0 0 9 0 4 2 3
+48. Código: 7 8 1 0
+49. Fecha inicio actividad: 2 0 0 9 0 4 2 3
+50. Código: 1    2
+51. Código:
+52. Número establecimientos:
+
+Responsabilidades
+
+53. Código: 5 7
+
+05- Impto. renta y compl. régimen ordinario
+07- Retención en la fuente a título de renta
+
+Usuarios aduaneros                                          Exportadores
+
+54. Código:
+55. Forma:
+56. Tipo:
+Servicio  1  2  3
+57. Modo:
+58. CPC:
+
+Para uso exclusivo de la DIAN
+
+59. Anexos: SI  X  NO
+60. No. de Folios: 7
+61. Fecha: 2 0 1 3 0 3 2 6
+
+La información contenida en el formulario, será responsabilidad de quien lo suscribe y en
+consecuencia corresponde exactamente a la realidad; por lo anterior, cualquier falsedad en que
+incurra podrá ser sancionada.
+
+Artículo 15 Decreto 2788 del 31 de Agosto de 2004.
+
+Firma del solicitante:
+C.C. 63 488.786
+
+Sin perjuicio de las verificaciones que la DIAN realice.
+Firma autorizada:
+
+984. Nombre: ARANA ARANA NARELLY ESTHER
+985. Cargo: Analista IV
+
+Fecha generación documento PDF: 26-03-2013 04:49:13PM

@@ -1,0 +1,73 @@
+Formulario del Registro Único Tributario Hoja Principal
+DIAN
+Nynii= rrn
+001
+2. Concepto
+2
+Actualización
+Espacio reservado para la DIAN
+4 , Número de formulario
+14235322614
+(4151770721248998418020) 000001423532261 4
+5. Número de Identificación Tributaria (NIT): 0 2 8 0 7 5 7
+6. DV 12. Dirección seccional
+14. Buzón electrónico
+Impuestos de Cúcuta
+IDENTIFICACION 26 . Número de Identificación:
+24. Tipo de contribuyente: Persona juridica Lugar de expedición
+25. Tipo de documento:
+27 . Fecha expedición:
+28. País:
+29. Departamento:
+36 Ciudac  Municipio;
+31. Primer apellido
+32   Segundo apellido
+33. Primer nombre
+34 . Otios nombres
+35. Razón social: ASOCIACION MUTUAL ASOVITAL
+36. Nombre comercial: ASOCIACION MUTUAL ASOVITAL
+37 , Sigle ASOVITAL
+UBICACION
+38. País: COLOMBIA
+39. Deparramento: 6 9 Norte de Santander
+40. CiudadiMunicipio: 5 4 Pamplona
+5 /1 | 8
+41 , Dirección TERMINAL DE TRANSPORTES OF 35 CR 9 3 120 BRR EL CAMELLON 42 Correo electronico: 43. Apartado aereo 44, Teiefcno 1 asovitalcom@gamil com CLASIFICACION
+45. Teléfona 2:
+5 6 8 /6| 7 | 2| 2
+3
+6 7/0/ 4 7 | 3/8
+Activicad ecenémica Activirlad secundaria Otras actividades 48. Ccdigo: 45Fechainicio actividad: 50, Código: 8 0 00 4/2 3 Responsabilidades
+Ocupación
+Actividad principal 46. Codigo: 47 , Fecha inicio actividad: 6 2 2 0 0 9 /0 4 |2 3
+52. Número establecimientos
+51. Código
+10
+12
+13
+14
+15
+16
+18
+53 . Código: 5
+05- Impto. renta y compl.  régimen   ordinario 07- Retención en la fuente a título de renta
+Usuarios aduaneros
+Exportadores
+40
+55. Forma
+56. Tipo
+Servicio
+54. Código:
+57 . Modo
+58. CPC
+Para uso exclusivo de la DIAN
+59 Anexos:
+sI X
+No
+60. No. de Folios:
+61. Fecha: 2 0 1 3/0 3/2 6
+La Información   contenida en el formulario sera responsabilidad de quien lo suscribe y en consecuencia corresponden exactamente a la realidad: por lo anterior, cualquier falsedad en que Incurra podra ser sancionada Artículo 15 Decreto 2788 del 31 de Agosto de 2004
+Sin perjuicio de las verificaciones que la DIAN realice Firma autorizada:
+Firma del sglicitante: Uodoà_@0 63 488. ^86
+984 . Nombre ARANA ARANA NARELLY ESTHER 985. Cargo: Analista IV
+Fecha generación documento PDF: 26-03-2013 04;49:13PM

@@ -1,0 +1,117 @@
+Número Póliza: 4466884
+
+sura
+
+SEGURO DE CUMPLIMIENTO
+
+Hola, FUNDACION CAMINOS ABIERTOS
+
+Este documento es la carátula de tu
+seguro y contiene la información
+del compromiso que SURA
+adquiere contigo.
+
+INFORMACIÓN DEL TOMADOR
+
+Nombre y apellidos o razón social                Tipo de identificación    Número de identificación
+FUNDACION CAMINOS ABIERTOS                       NIT                       9000544443
+Dirección                                        Ciudad                    Teléfono
+CR 29 A # 40 81 GIRALUZ                          BUCARAMANGA               6530020
+
+INFORMACIÓN DEL GARANTIZADO
+
+Nombre y apellidos o razón social    Tipo de identificación    Número de identificación    Dirección                Ciudad           Teléfono
+FUNDACION CAMINOS ABIERTOS           NIT                       9000544443                  CR 29 A # 40 81 GIRALUZ  BUCARAMANGA      6530020
+
+INFORMACIÓN DEL BENEFICIARIO Y/O ASEGURADO
+
+Nombre y apellidos o razón social                Tipo de identificación    Número de identificación
+MUNICIPIO DE PIEDECUESTA                         NIT                       8902053836
+
+INFORMACIÓN BÁSICA DE LA PÓLIZA
+
+Número de          Operación         Oficina    Ciudad expedición       Fecha de
+documento           POLIZA NUEVA      2629       BUCARAMANGA            expedición
+17193540                                                                2026-03-03
+Forma de pago      Número de riesgos  Referencia de    Producto                                              Moneda
+CONTADO            vigentes           pago             SEGURO DE CUMPLIMIENTO A FAVOR DE ENTIDADES ESTATALES  PESO
+                   1                  0121719354       (GARANTÍA ÚNICA)                                       COLOMBIANO
+                                      0
+
+COBERTURAS
+
+Nombre                        Fecha inicial     Fecha vencimiento    Valor asegurado        Prima
+SERIEDAD DE LA OFERTA         05-MAR-2026       05-JUL-2026          $80.000.000,00         $80.000
+
+VALORES A PAGAR
+
+Valor prima sin IVA    Valor IVA     Total a pagar    Valor asegurado        Total valor asegurado
+$80.000                $15.200       $95.200          $80.000.000,00         $80.000.000,00
+
+VALOR A PAGAR EN LETRAS : NOVENTA Y CINCO MIL DOSCIENTOS PESOS M/L
+VIGENCIAS MOVIMIENTO Y PÓLIZA
+
+Vigencia movimiento desde    Vigencia movimiento hasta    Número de días    Vigencia póliza desde    Vigencia póliza hasta
+05-MAR-2026                  05-JUL-2026                  122               05-MAR-2026              05-JUL-2026
+
+Ramo        Producto    Oficina    Usuario
+012         NDX         2629       CUM001
+
+INTERMEDIARIO
+
+Nombres y apellidos o razón social          Código    Compañía                                Categoría    % participación    Prima
+BAEZ COTE ASESORES DE SEGUROS LTDA.         11219     SEGUROS GENERALES SURAMERICANA S.A.     AGENCIAS     100%               80.000
+
+COASEGURO
+
+Tipo coaseguro        Número póliza líder    Documento compañía líder
+DIRECTO
+
+CONDICIONES GENERALES APLICABLES
+
+Nombre         Fecha a partir de cual    Tipo y número de la    Tipo de       Ramo al cual      Identificación interna de la    Canal de
+               se utiliza                entidad                documento     pertenece         proforma                        comercialización
+CLAUSULAD      2017-01-01                13 - 18                P             05                F-01-12-084                     D001
+O
+NOTA           2017-06-25                13 - 18                NT-P          5                 N-01-012-011
+TÉCNICA
+
+TEXTOS Y ACLARACIONES ANEXAS :
+
+GARANTIZAR LA SERIEDAD DEL OFRECIMIENTO EN VIRTUD DEL PROCESO NO.
+SGTIC-LP-01-2026 REFERENTE A PRESTAR EL SERVICIO DE LOGÍSTICA PARA LA
+REALIZACIÓN DE LOS EVENTOS INSTITUCIONALES O PARA CUMPLIR CON LOS
+REQUERIMIENTOS DE LAS DIFERENTES SECRETARÍAS Y EN GENERAL DE LA ADMINISTRACIÓN
+MUNICIPAL DE PIEDECUESTA (SANTANDER), BAJO EL SISTEMA DE PRECIOS UNITARIOS POR
+ELEMENTOS LOGISTICOS.
+
+LA PRESENTE GARANTIA CUBRE AL ASEGURADO LA SANCION DERIVADA DEL INCUMPLIMIENTO
+DE LA OFERTA, EN LOS SIGUIENTES EVENTOS:
+1. LA NO AMPLIACION DE LA VIGENCIA DE LA GARANTIA DE SERIEDAD DE LA OFERTA
+CUANDO EL PLAZO PARA LA ADJUDICACION O PARA SUSCRIBIR EL CONTRATO ES
+PRORROGADO, SIEMPRE QUE TAL PRORROGA SEA INFERIOR A TRES (3) MESES.
+2. EL RETIRO DE LA OFERTA DESPUES DE VENCIDO EL PLAZO FIJADO PARA LA
+PRESENTACION DE LAS OFERTAS.
+3. LA NO SUSCRIPCION DEL CONTRATO SIN JUSTA CAUSA POR PARTE DEL ADJUDICATARIO.
+4. LA FALTA DE OTORGAMIENTO POR PARTE DEL PROPONENTE SELECCIONADO DE LA
+GARANTIA DE CUMPLIMIENTO DEL CONTRATO
+
+Seguros Generales Suramericana S.A NIT 890.903.407-9.Somos Grandes Contribuyentes. Por favor no efectuar retención sobre IVA. Las primas de seguros
+no están sujetas a retención en la fuente (Decreto reglamentario 2509/85 Art 17). Autorretenedores Resolución 009961 de 2010. Responsable de
+impuesto sobre las ventas régimen común agentes de retención. En virtud del numeral 28 del artículo 530 del Estatuto Tributario, el presente documento
+se encuentra exento del impuesto de timbre.
+
+INFORMACIÓN ADICIONAL
+
+LA PRESENTE PÓLIZA SE RIGE POR LAS CONDICIONES GENERALES CONTENIDAS EN LA PROFORMA F-01-12-084 LAS CUALES
+SE ADJUNTAN.
+
+PARA EFECTOS DE CUALQUIER NOTIFICACIÓN, LA DIRECCIÓN DE LA COMPAÑÍA ES CR 63 49 A 31 P 1 ED CAMACOL
+MEDELLIN SEGUROS GENERALES SURAMERICANA S.A. NIT 890.903.407-9 RESPONSABLE DEL IMPUESTO SOBRE LAS VENTAS
+RÉGIMEN COMÚN.
+Firma autorizada                              Firma tomador
+
+SEGUROS GENERALES SURAMERICANA S.A.
+
+IMPORTANTE: ESTE DOCUMENTO SÓLO ES VÁLIDO COMO RECIBO DE PRIMA, SI ESTÁ FIRMADO POR UN CAJERO O COBRADOR AUTORIZADO POR LA
+SURAMERICANA. SI SE ENTREGA A CAMBIO DE UN CHEQUE, LA PRIMA SÓLO SERÁ ABONADA AL RECIBIR SURAMERICANA SU VALOR.

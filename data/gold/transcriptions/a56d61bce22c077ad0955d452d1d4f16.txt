@@ -1,0 +1,154 @@
+PÓLIZA DE SEGURO DE CUMPLIMIENTO EN FAVOR DE ENTIDADES ESTATALES
+(DECRETO 1082 DE 2015)
+ZURICH COLOMBIA SEGUROS S.A.
+Nit. 860002534-0
+
+ZURICH
+v1.3
+
+COMPAÑÍA  1309    COD SUC  C00011001    SUCURSAL  Bogotá 1              PRODUCTO  Garantía Única
+PÓLIZA No  SGPL-245047878-1    CERTIFICADO No  0    AÑO  2026           DOCUMENTO DE  Negocio Nuevo
+
+DATOS DEL CLIENTE
+
+TOMADOR        UNION TEMPORAL URBANO 2026                               TIPO DOC  CTU       18757222
+DIRECCIÓN      Calle 45 45-76                    CIUDAD  Villavicencio  TELÉFONO  3134041983
+ASEGURADO      MUNICIPIO DE PUERTO LOPEZ META                           TIPO DOC  NIT       892099325  0
+DIRECCIÓN      Calle 6 Carrera 4 40              CIUDAD                 TELÉFONO
+BENEFICIARIO   MUNICIPIO DE PUERTO LOPEZ META                           TIPO DOC  NIT       892099325  0
+DIRECCIÓN      Calle 6 Carrera 4 40              CIUDAD                 TELÉFONO
+
+VIGENCIA DEL SEGURO                                    PERIODO QUE CUBRE ESTE CERTIFICADO
+
+DESDE          A LAS      HASTA          A LAS         DESDE          A LAS      HASTA          A LAS
+05/03/2026     00:00      10/06/2026     24:00         05/03/2026     00:00      10/06/2026     24:00
+DD/MM/AAAA     HORAS      DD/MM/AAAA     HORAS         DD/MM/AAAA     HORAS      DD/MM/AAAA     HORAS
+
+INTERMEDIARIOS                                         COASEGURO      CEDIDO     X     ACEPTADO
+
+CÓDIGO    NOMBRE INTERMEDIARIO          % PART.        CÓDIGO    NOMBRE COMPAÑÍA                    % PART.    PRIMA
+1281      DCSEGUROSYFINANZASLTDA        100            46329     ZURICH COLOMBIA SEGUROS S.A        50         2.085.609,17
+                                                       114820    COMPAÑIA MUNDIAL DE SEGUROS        50         2.085.609,17
+
+DATOS TÉCNICOS
+
+DESCRIPCIÓN DE LA ACTIVIDAD: Ver Observaciones de la Póliza
+
+                                                       PARTICIPANTES CONSORCIO Y/O UNIÓN TEMPORAL
+VALOR ASEGURADO ANTERIOR                    0          IDENTIFICACIÓN    NOMBRE                    %PART.
+VALOR ASEGURADO ACTUAL          4.171.218.339,80
+
+MONEDA    COP          FECHA
+VALOR TRM
+
+                                    VIGENCIA                VALOR ASEGURADO    VALOR ASEGURADO
+AMPAROS                             DESDE - HASTA           ANTERIOR           ACTUAL                  PRIMA
+
+Seriedad de oferta                  05/03/2026 - 10/06/2026       0            4.171.218.339,80         4.171.218,34
+
+OBSERVACIONES
+
+El presente contrato se integra por: La solicitud de seguro, la carátula, las condiciones generales y particulares, el anexo de cláusulas adicionales, los anexos de amparos adicionales y las cláusulas relacionadas
+en la carátula, contenidas en el condicionado general, las cuales han sido recibidas por el tomador, y los anexos y los certificados que se expidan en adición a ella. La mora en el pago de la prima del
+contrato de seguro o de los certificados o anexos que se expidan con fundamento en ella, no producirá la terminación automática del contrato, sin perjuicio del derecho, en cabeza de la aseguradora, de
+exigir el pago de la prima y de los gastos causados con ocasión de la expedición del contrato, todo ello de conformidad con lo establecido en el art. 7 de la ley 1150 de 2007 y en la sección 3 del decreto 1082
+de 2015.
+PARA NOSOTROS ES MUY IMPORTANTE TU TRANQUILIDAD, POR ESO, TE RECORDAMOS QUE PUEDES VERIFICAR LA AUTENTICIDAD DE TU PÓLIZA DE CUMPLIMIENTO INGRESANDO A NUESTRA PÁGINA WEB
+WWW.ZURICHSEGUROS.COM.CO/LINEAS-CORPORATIVAS/CUMPLIMIENTO, HAZ CLIC EN VERIFICA TU PÓLIZA Y ESCANEAS EL CÓDIGO QR O COMPLETAS LOS DATOS QUE TE SOLICITA. TAMBIÉN PUEDES
+LLAMAR A LA LÍNEA NACIONAL 01 800 0112723
+
+FORMA DE PAGO                                                          LIQUIDACIÓN DE PRIMAS
+
+TRANSF.BANCARIA A 20 DIAS                                              PRIMA         COP 4.171.218,34
+                                                                       IVA           COP 792.531,48
+
+La compañía expide el presente contrato en la ciudad de Bogotá, D.C. a los 25 días del mes de
+FEBRERO de 2026                                                        TOTAL         COP 4.963.749,82
+
+FIRMA ASEGURADOR                              Bogotá, D.C.                           FIRMA TOMADOR
+                                              Calle 116 # 7-15 Interior 2, Piso 12, Oficina 1201
+
+JORGE RIASCOS REPRESENTANTE LEGAL C.C. 94.426.721
+21/04/2023-1309-NT-P-05-PCES-00000000003      Página 1 de 3             21/04/2023-1309-P-05-PCES-00000000003-D001
+
+Defensor del consumidor financiero Alberto Enrique Osuna Ibarra y/o María Cecilia Arango Osuna. Dirección: Calle 28 # 13A - 24 Ofc. 410 Bogotá D.C., Colombia
+Teléfono: (571) 4929423 • Celular: 3102514100. Correo: alberto.osuna@osunayrango.com / maria.arango@osunayrango.com. Horario de atención: Lunes a
+viernes 8:00 am. a 5:00 p.m.
+
+VIGILADO SUPERINTENDENCIA FINANCIERA DE COLOMBIA
+
+RESPONSABLES DE IVA - GRAN CONTRIBUYENTE /RESOLUCIÓN DIAN NÚMERO 000200 del 27 de diciembre de 2024 - NO SUJETOS A RETENCIÓN (Las primas de seguros no son sujetas a retención en la fuente)
+PÓLIZA DE SEGURO DE CUMPLIMIENTO EN FAVOR DE ENTIDADES ESTATALES
+(DECRETO 1082 DE 2015)
+ZURICH COLOMBIA SEGUROS S.A.
+Nit. 860002534-0
+
+ZURICH
+
+PÓLIZA    SGPL-245047878-1    CERTIFICADO No    0
+
+CLAUSULAS ADICIONALES
+Condiciones Particulares
+
+GARANTIZAR LA SERIEDAD DE LA OFERTA PRESENTADA SEGUN LICITACION PUBLICA No. LP No. 001 - 2026 CUYO OBJETO ES FASE 1 ETAPA 1
+SECTOR UBICADO SOBRE LA VIA NACIONAL - AVENIDA 14 DESDE LA CARRERA SEPTIMA (7) HASTA LA CARRERA QUINCE (15)
+
+** TOMADOR/AFIANZADO **
+UNIÓN TEMPORAL URBANO 2026 CONFORMADA POR:
+GERMAN JAVIER DIAZ GUTIERREZ 80.056.325 79%
+VIALGA S.A.S 900.389.943-5 10%
+MARSANHG S.A.S 901.956.957-4 10%
+WILMER FABIAN QUEVEDO GIRALDO 1.121.824.964 1,0%
+
+Defensor del consumidor financiero Alberto Enrique Osuna Ibarra y/o María Cecilia Arango Osuna. Dirección: Calle 28 # 13A - 24 Ofc. 410 Bogotá D.C., Colombia
+Teléfono: (571) 4929423 • Celular: 3102514100. Correo: alberto.osuna@osunayrango.com / maria.arango@osunayrango.com. Horario de atención: Lunes a
+viernes 8:00 am. a 5:00 p.m.
+
+VIGILADO SUPERINTENDENCIA FINANCIERA DE COLOMBIA
+
+RESPONSABLES DE IVA - GRAN CONTRIBUYENTE /RESOLUCIÓN DIAN NÚMERO 000200 del 27 de diciembre de 2024 - NO SUJETOS A RETENCIÓN (Las primas de seguros no son sujetas a retención en la fuente).
+
+Página 2 de 3
+PÓLIZA DE SEGURO DE CUMPLIMIENTO EN FAVOR DE ENTIDADES ESTATALES (DECRETO 1082
+DE 2015)
+ZURICH COLOMBIA SEGUROS S.A.
+Nit. 860002534-0
+
+ZURICH
+
+PÓLIZA    SGPL-245047878-1    CERTIFICADO No    0
+
+CLAUSULA DE DESTRIBUCION DE COASEGURO CEDIDO
+
+El presente amparo lo otorga ZURICH COLOMBIA SEGUROS S.A. y lo suscriben las Compañías citadas más adelante, pero las obligaciones de las
+Compañías para con el asegurado no son solidarias.
+
+COMPAÑÍA                              %PART    VALOR ASEGURADO          PRIMA
+COMPAÑIA MUNDIAL DE SEGUROS 50                 COP 2.085.609.169,90    COP 2.085.609,17
+ZURICH COLOMBIA SEGUROS S.A  50                COP 2.085.609.169,90    COP 2.085.609,17
+TOTAL                        100               COP 4.171.218.339,80    COP 4.171.218,34
+
+La administración y atención de la póliza corresponde a seguros ZURICH COLOMBIA SEGUROS S.A., la cual recibirá del asegurado la prima total
+para distribuirla entre las Compañías Coaseguradoras en las proporciindicadas anteriormente.
+
+En los siniestros, ZURICH COLOMBIA SEGUROS S.A., pagará únicamente la participación porcentual señalada anteriormente y además recibirá
+la participación correspondiente de las otras Compañías, la entregará al asegurado, sin que en ningún momento se haga responsable por un
+Cliente.
+
+COMPAÑIA MUNDIAL DE SEGUROS S A                ZURICH COLOMBIA SEGUROS S.A
+PRIMA AUTORIZADA                               PRIMA AUTORIZADA
+
+Defensor del consumidor financiero Alberto Enrique Osuna Ibarra y/o María Cecilia Arango Osuna. Dirección: Calle 28 # 13A - 24 Ofc. 410 Bogotá D.C., Colombia
+Teléfono: (571) 4929423 • Celular: 3102514100. Correo: alberto.osuna@osunayrango.com / maria.arango@osunayrango.com. Horario de atención: Lunes a
+viernes 8:00 am. a 5:00 p.m.
+
+VIGILADO SUPERINTENDENCIA FINANCIERA DE COLOMBIA
+
+RESPONSABLES DE IVA - GRAN CONTRIBUYENTE /RESOLUCIÓN DIAN NÚMERO 000200 del 27 de diciembre de 2024 - NO SUJETOS A RETENCIÓN (Las primas de seguros no son sujetas a retención en la fuente).
+
+Página 3 de 3
+ZURICH
+
+Póliza de Seguro de Cumplimiento en
+Favor de Entidades Estatales
+(Decreto 1082 de 2015)

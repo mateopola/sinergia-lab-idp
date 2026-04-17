@@ -81,7 +81,6 @@ Por cada PDF escaneado del corpus:
 ### Referencias
 
 - Plan maestro: `PLAN_MODELADO_CRISPDM.md` §2.1
-- Plan de implementacion del equipo: `PLAN_OCR_EQUIPO.md`
 - Modulo reutilizado: `src/preprocessing/pipeline.py`
 
 ### Tiempo estimado

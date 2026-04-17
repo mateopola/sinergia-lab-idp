@@ -29,7 +29,6 @@ SinergiaLabProyecto/
 ├── README.md                            ← este archivo
 ├── PLAN_MODELADO_CRISPDM.md            ← plan maestro (roadmap completo CRISP-DM++)
 ├── OCR_BENCHMARK.md                    ← bitácora del benchmark OCR + decisión
-├── PLAN_OCR_EQUIPO.md                  ← plan de implementación del OCR local
 ├── Resumen_Investigacion_SinergIA_Lab.md ← informe académico de investigación
 │
 ├── data/
@@ -110,7 +109,7 @@ Cada notebook incluye celdas de validación al final. Checks típicos:
 | Decisión | Ubicación | Resumen |
 |---|---|---|
 | **EasyOCR como motor OCR** | `OCR_BENCHMARK.md` §2 | Ganador del benchmark contra Tesseract. Con GPU: unificado. En CPU: selector híbrido (EasyOCR para Cédula; Tesseract para RUT/Póliza/CC). Este repo corre CPU con EasyOCR unificado. |
-| **Preprocesamiento visual solo para escaneados** | `PLAN_OCR_EQUIPO.md` §2 | Los 548 PDFs digitales van directo a PyMuPDF, no pasan por OpenCV. Ahorra 12 GB de disco. |
+| **Preprocesamiento visual solo para escaneados** | `notebooks/04_preprocesamiento_imagenes.ipynb` | Los 548 PDFs digitales van directo a PyMuPDF, no pasan por OpenCV. Ahorra 12 GB de disco. |
 | **Chunking diferenciado por tipología** | `PLAN_MODELADO_CRISPDM.md` §2.3 | Cédula: sin chunking. RUT/Póliza: sliding window 512 tokens / 30% overlap. CC: layout-aware con HoughLinesP. |
 | **Gold seed 15 docs ahora / gold extendido 70 docs en Fase 4** | `PLAN_MODELADO_CRISPDM.md` §2.1.2 | El seed de 15 cubre benchmark OCR y validación de LFs. El extendido a 70 solo si F1 requiere más rigor estadístico. |
 | **Donut descartado como arquitectura global** | `PLAN_MODELADO_CRISPDM.md` §ALT-1 | Revisitable solo para Cédulas si F1 Fase 4 insuficiente. |
@@ -124,7 +123,6 @@ Cada notebook incluye celdas de validación al final. Checks típicos:
 |---|---|
 | [PLAN_MODELADO_CRISPDM.md](PLAN_MODELADO_CRISPDM.md) | **Plan maestro.** Hoja de ruta Fase 1-4 con checkboxes de avance. |
 | [OCR_BENCHMARK.md](OCR_BENCHMARK.md) | Bitácora del benchmark OCR (Parte 1: procedimiento / Parte 2: hallazgos + decisión). |
-| [PLAN_OCR_EQUIPO.md](PLAN_OCR_EQUIPO.md) | Plan de implementación del pipeline OCR local para el equipo. |
 | [Resumen_Investigacion_SinergIA_Lab.md](Resumen_Investigacion_SinergIA_Lab.md) | Informe académico: contexto, literatura, competidores, requerimientos. |
 
 ---
@@ -133,4 +131,4 @@ Cada notebook incluye celdas de validación al final. Checks típicos:
 
 Proyecto colaborativo del equipo SinergIA Lab, PUJ Especialización IA 2026.
 
-Para ejecutar las partes pesadas del pipeline (corridas OCR overnight, fine-tuning), ver [PLAN_OCR_EQUIPO.md](PLAN_OCR_EQUIPO.md).
+Para ejecutar las partes pesadas del pipeline (corridas OCR overnight, fine-tuning), cada notebook es auto-contenido e incluye en su portada las dependencias, tiempos estimados y modo de ejecución retomable.

@@ -171,6 +171,28 @@ Figura: `data/processed/fig11_ocr_benchmark.png` (barras CER + scatter CER vs ti
 Normalización previa a CER/WER: lowercase + colapso de whitespace.
 Regex de entidades: NIT `\b\d{8,10}[-\s]?\d\b`, Cédula `\b\d{1,3}(?:[.\s]\d{3}){2,3}\b`, Fecha `\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b`, Monto `\$\s?\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{1,2})?`.
 
+### 2.6.1 Ejecución productiva — Notebook 04 (preprocesamiento visual)
+
+**Fecha:** 2026-04-17
+**Notebook:** [notebooks/04_preprocesamiento_imagenes.ipynb](notebooks/04_preprocesamiento_imagenes.ipynb)
+**Output:** `data/processed/image_manifest.csv` + `data/processed/images/processed_{md5}_page_{N}.jpg`
+
+| Métrica | Valor |
+|---|---|
+| Documentos procesados | 412 (403 PDFs + 9 imágenes directas) |
+| Páginas procesadas | 1,678 |
+| Errores | 0 |
+| Tiempo total | ~9 min |
+| Disco ocupado | 1.90 GB |
+
+**Decisiones arquitecturales durante el desarrollo:**
+
+1. **Filtro `es_escaneado=True`:** solo se preprocesan los 416 docs escaneados. Los 548 digitales van directo a PyMuPDF en nb 05 — no necesitan imagen. Reduce consumo de disco de ~14 GB a ~1.9 GB.
+2. **Soporte imágenes directas:** 9 cédulas/RUT/TP del corpus son `.jpg`/`.jpeg` (no PDF). Se agregó soporte con función `load_page_as_image()` que discrimina por extensión.
+3. **Fix de numeración de bloques:** bug detectado donde `image_bloque_NNNN.csv` se sobreescribían en re-ejecuciones. Arreglado: numeración continua desde el último bloque existente.
+
+**Docs excluidos (4):** PDFs con `n_pages=0` (corruptos desde Fase 1). Irrecuperables.
+
 ### 2.7 Decisión final
 
 **Aplicación de la regla de decisión del §1.5:**

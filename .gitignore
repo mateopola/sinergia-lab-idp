@@ -2,6 +2,14 @@
 data/raw/
 data/processed/quality_report_completo.csv
 
+# ─── Outputs pesados del pipeline OCR (regenerables) ─────────────────────────
+data/processed/images/
+data/processed/image_blocks/
+data/processed/ocr_blocks/
+data/processed/corpus_ocr.csv
+data/gold/ocr_output/
+data/gold/transcriptions/
+
 # Los reportes visuales y JSON de decisiones sí se versionan
 # data/processed/*.png  → incluidos
 # data/processed/fase1_decisiones.json → incluido

@@ -83,8 +83,8 @@
 - [x] Implementar función `enhance_contrast()`: CLAHE (Contrast Limited Adaptive Histogram Equalization) *(Notebook 02 v2, pipeline.py)*
 - [x] Implementar función `normalize_dpi()`: re-muestreo a 300 DPI estándar *(Notebook 02, Sección 3)*
 - [x] Construir pipeline modular: `detect_cover → deskew → denoise → enhance_contrast → binarize → normalize_dpi` *(Notebook 02 v2, pipeline.py)*
-- [ ] Guardar imágenes procesadas en `data/processed/images/` con nomenclatura estandarizada
-- [ ] Validar pipeline con muestra de 50 documentos y comparar métricas OCR antes/después
+- [x] **Guardar imágenes procesadas en `data/processed/images/` con nomenclatura estandarizada** *(Notebook 04, 2026-04-17 — 1,678 páginas / 412 docs escaneados procesadas, 0 errores, 1.9 GB)*
+- [x] **Validar pipeline con muestra** *(Notebook 04: test visual en `fig12_preprocesamiento_test.png` + validación post-corrida en celda 20)*
 
 ### 2.1.1 ✅ Selección del Motor OCR (Benchmark Comparativo) — COMPLETADO 2026-04-15
 

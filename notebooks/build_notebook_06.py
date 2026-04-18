@@ -363,6 +363,91 @@ if len(det):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# 7.5 NORMALIZACION POST-EXTRACCION
+# ══════════════════════════════════════════════════════════════════════════════
+cells.append(md("""## Normalizacion post-extraccion (pre-Label Studio)
+
+Antes de exportar a Label Studio aplicamos dos normalizaciones para evitar contaminar el dataset de entrenamiento con variantes triviales:
+
+### 1. Municipio — unificar variantes de Bogota
+
+Las 4 variantes detectadas en la extraccion raw (`Bogota D.C.`, `Bogota D.C`, `Bogota DC`, `BOGOTA D.C.`) colapsan a un canonico **`Bogota D.C.`**. Lo mismo con el resto: normalizamos espacios y puntuacion final, respetando la capitalizacion del municipio.
+
+### 2. Regimen — distinguir `simple` vs `simplificado`
+
+El regex original mapeaba `simpli*` → `simplificado` pero dejaba `Simple` (Regimen Simple de Tributacion, RST) sin normalizar. Aqui **distinguimos los dos regimenes** porque son juridicamente distintos en Colombia (Ley 2155 de 2021 vs antiguo IVA simplificado):
+
+- `Simple*` / `simple*` → `simple` (RST)
+- `Simplifi*` / `simpli*` → `simplificado`
+
+### Por que normalizar ANTES de Label Studio y no DESPUES
+
+Si el humano ve `Bogota D.C` y `Bogota D.C.` como entidades distintas, podria **aprobar ambas como validas**, consolidando el ruido en el ground truth. La normalizacion previa fuerza consistencia.
+"""))
+
+cells.append(code("""# Mapeo canonico de municipios — solo consolida variantes evidentes de Bogota
+_BOGOTA_VARIANTS = [
+    'BOGOTA D.C.', 'Bogota D.C', 'Bogota DC', 'BOGOTÁ D.C.',
+    'Bogotá D.C', 'Bogotá DC', 'bogota d.c.', 'bogota d.c',
+]
+_MUN_CANONICO = {v.lower().strip('.').replace('á','a').replace('  ',' '): 'Bogotá D.C.' for v in _BOGOTA_VARIANTS}
+
+def normalizar_municipio(m):
+    if m is None or (isinstance(m, float) and pd.isna(m)):
+        return None
+    m = str(m).strip()
+    # Eliminar puntuacion final repetida, colapsar espacios
+    m_clean = re.sub(r'\\s+', ' ', m).strip().strip('.')
+    key = unicodedata.normalize('NFKD', m_clean).encode('ascii','ignore').decode('ascii').lower().strip()
+    return _MUN_CANONICO.get(key, m)  # si no esta en el mapa, devolver original
+
+
+def normalizar_regimen(r):
+    if r is None or (isinstance(r, float) and pd.isna(r)):
+        return None
+    r_norm = str(r).lower().strip()
+    if r_norm.startswith('simple'):
+        return 'simple'         # Regimen Simple de Tributacion (Ley 2155/2021)
+    if r_norm.startswith('simpli'):
+        return 'simplificado'   # Antiguo regimen simplificado de IVA
+    if r_norm.startswith('ordinar'):
+        return 'ordinario'
+    if r_norm.startswith('especial'):
+        return 'especial'
+    return r_norm
+
+
+# Aplicar al dataframe preanot
+preanot['municipio'] = preanot['municipio'].apply(normalizar_municipio)
+preanot['regimen']   = preanot['regimen'].apply(normalizar_regimen)
+
+print('=== DESPUES DE NORMALIZACION ===\\n')
+print('Regimen:')
+print(preanot['regimen'].value_counts(dropna=False).to_string())
+print()
+print('Municipio (top 10):')
+print(preanot['municipio'].value_counts(dropna=False).head(10).to_string())
+
+# Refrescar cobertura
+cobertura = []
+for ent in entidades:
+    total = len(preanot)
+    detectados = preanot[ent].notna().sum()
+    unicos = preanot[ent].dropna().nunique()
+    cobertura.append({
+        'entidad':    ent,
+        'detectados': detectados,
+        'nulos':      total - detectados,
+        'cobertura':  round(detectados / total, 3),
+        'unicos':     unicos,
+    })
+cob_df = pd.DataFrame(cobertura)
+print('\\n=== COBERTURA POST-NORMALIZACION ===')
+print(cob_df.to_string(index=False))
+"""))
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # 8. EXPORTAR A LABEL STUDIO
 # ══════════════════════════════════════════════════════════════════════════════
 cells.append(md("""## Exportar a formato Label Studio

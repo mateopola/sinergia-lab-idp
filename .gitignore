@@ -8,6 +8,8 @@ data/processed/image_blocks/
 data/processed/ocr_blocks/
 data/processed/corpus_ocr.csv
 data/processed/corpus_ocr_preV2_backup.csv
+data/processed/rut_preanotaciones.jsonl
+data/processed/rut_preanotaciones_labelstudio.json
 data/gold/ocr_output/
 data/gold/transcriptions/
 

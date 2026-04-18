@@ -273,8 +273,29 @@ def select_ocr(tipologia):
   - `representante_legal`: APELLIDOS NOMBRES antes de "Representante legal" — 5/5 docs correctos
   - **NOTA sobre `filtrar_ciiu_rut()`:** usar SOLO para embeddings/TF-IDF, NO para extracción NER. La función elimina tokens CIIU (orgánicas, lata, frasco) del texto para generar embeddings limpios.
   - **Estructura del texto DIAN (hallazgo crítico para LFs):** PyMuPDF extrae el RUT en un orden no intuitivo: primero todos los LABELS del formulario (~1,500 chars de nombres de casillas), después los VALORES reales. Truncar el texto en el header "Actividad económica" (que aparece en la sección de labels) elimina todos los valores. Por eso `filtrar_ciiu_rut()` usa eliminación de tokens (no truncado) y las LFs operan sobre el texto completo sin filtrar.
-- [ ] Generar pre-anotaciones automáticas sobre los **235 RUT** (texto digital)
-- [ ] Cargar pre-anotaciones en Label Studio → revisión humana solo para corregir (no anotar desde cero)
+- [x] **Generar pre-anotaciones automáticas sobre los 216 RUT del corpus OCR** — [Notebook 06](notebooks/06_preanotaciones_rut.ipynb) ejecutado 2026-04-18. Outputs: `data/processed/rut_preanotaciones.jsonl`, `rut_preanotaciones_labelstudio.json`, `rut_preanotaciones_summary.csv`.
+
+  **Cobertura empírica de las LFs (tras normalización):**
+
+  | Entidad | Cobertura | Notas |
+  |---|---|---|
+  | `municipio` | 99.5% | 4 variantes de Bogotá consolidadas a canónico; 9 municipios únicos |
+  | `regimen` | 98.6% | 3 valores limpios: `ordinario`, `especial`, `simple` (RST Ley 2155/2021) |
+  | `nit` | 98.1% | 4 fallos son docs escaneados con OCR ruidoso en dígitos |
+  | `direccion` | 93.1% | — |
+  | `razon_social` | 81.9% | Fallos típicos son docs escaneados |
+  | `representante_legal` | 65.3% | Cuello de botella — 75 docs requerirán corrección humana |
+
+  **Validación contra gold seed (3 RUT transcritos):** 4/6 campos correctos en docs digitales, 2/6 en el escaneado (RUT ASOVITAL). Confirma hipótesis: LFs excelentes sobre PyMuPDF, degradan con OCR.
+
+  **Normalizaciones aplicadas post-extracción** (documentadas en nb 06 §7.5):
+  - `municipio`: 4 variantes de Bogotá (`Bogotá D.C.`, `Bogotá D.C`, `Bogotá DC`, `BOGOTÁ D.C.`) → canónico `Bogotá D.C.`
+  - `regimen`: `Simple` → `simple` (distinto de `simplificado` — son regímenes jurídicamente distintos)
+
+  **Geografía del corpus:** 183/216 RUT son de Cali (85%) — confirma origen CCC. Implicación para §3.0 Clasificación: `municipio` no discrimina tipología.
+
+- [ ] Cargar `rut_preanotaciones_labelstudio.json` en Label Studio → revisión humana solo para corregir (no anotar desde cero)
+- [ ] Priorizar revisión humana de los 75 docs sin `representante_legal` y los ~6 docs escaneados (baja cobertura)
 - [ ] Target: Cohen's Kappa > 0.85 en muestra de validación cruzada de 50 docs por tipología
 
 #### Cédula — Anotación vía OCR Muestral (flujo alternativo)

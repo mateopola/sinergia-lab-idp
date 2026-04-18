@@ -183,20 +183,28 @@ print(f'Por engine:    {rut_pages[\"engine\"].value_counts().to_dict()}')
 print()
 
 # Consolidar texto por doc (concat paginas con \\n\\n entre ellas)
+# Sintaxis defensiva — evita named aggregation que ha dado conflictos en algunas
+# versiones de pandas cuando la key del output coincide con el nombre de la columna input.
+def _concat_pages(pages):
+    return '\\n\\n'.join(str(x) for x in pages if isinstance(x, str))
+
 rut_docs = (rut_pages
     .groupby('md5', as_index=False)
-    .agg(
-        filename=('filename', 'first'),
-        folder=('folder', 'first'),
-        engine=('engine', 'first'),
-        n_pages=('page_num', 'size'),
-        texto_completo=('texto_ocr', lambda s: '\\n\\n'.join(str(x) for x in s if isinstance(x, str))),
-    )
+    .agg({
+        'filename':  'first',
+        'folder':    'first',
+        'engine':    'first',
+        'page_num':  'size',
+        'texto_ocr': _concat_pages,
+    })
+    .rename(columns={'page_num': 'n_pages', 'texto_ocr': 'texto_completo'})
 )
 rut_docs['n_chars'] = rut_docs['texto_completo'].str.len()
 print(f'Docs consolidados: {len(rut_docs)}')
 print(f'Chars promedio/doc: {rut_docs[\"n_chars\"].mean():.0f}')
 print(f'Chars minimo/maximo: {rut_docs[\"n_chars\"].min()} / {rut_docs[\"n_chars\"].max()}')
+print()
+print('Columnas disponibles:', list(rut_docs.columns))
 rut_docs.head(3)[['filename','n_pages','n_chars','engine']]
 """))
 

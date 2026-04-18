@@ -351,13 +351,14 @@ print('=== VALIDACION LFs vs GOLD ===')
 print(val_df.to_string(index=False))
 
 # Precision por entidad
-det = val_df[val_df['en_gold'].notna()]
+det = val_df[val_df['en_gold'].notna()].copy()
 if len(det):
-    prec = det.groupby('entidad')['en_gold'].agg(['sum', 'size'])
-    prec['precision'] = (prec['sum'] / prec['size']).round(3)
+    det['en_gold_int'] = det['en_gold'].astype(bool).astype(int)
+    prec = det.groupby('entidad')['en_gold_int'].agg(hits='sum', total='size').reset_index()
+    prec['precision'] = (prec['hits'].astype(float) / prec['total'].astype(float)).round(3)
     print()
     print('=== PRECISION POR ENTIDAD (sobre docs detectados) ===')
-    print(prec.to_string())
+    print(prec.to_string(index=False))
 """))
 
 

@@ -164,6 +164,55 @@ def select_ocr(tipologia):
 - [ ] Implementar `select_ocr(tipologia)` en [src/preprocessing/pipeline.py](src/preprocessing/pipeline.py) reemplazando el default EasyOCR
 - [ ] Gestionar acceso a GPU con PUJ/el laboratorio
 
+### 2.1.4 Ejecución productiva del OCR del corpus — 2026-04-17/18
+
+> **Ejecutado.** EasyOCR CPU sobre 1,669 páginas escaneadas durante 23.42 h overnight. Validado contra gold seed.
+
+**Outputs:**
+- [data/processed/corpus_ocr.csv](data/processed/corpus_ocr.csv) — texto + bboxes por página (39 MB, gitignored por PII)
+- [data/processed/corpus_ocr_summary.csv](data/processed/corpus_ocr_summary.csv) — métricas sin texto (300 KB, commiteable)
+- [data/gold/ocr_corpus_validation.csv](data/gold/ocr_corpus_validation.csv) — CER + entity_recall contra gold seed
+- 68 bloques de checkpoint en `data/processed/ocr_blocks/`
+
+**Validación contra gold seed (15 docs):**
+
+| Folder | N | CER medio | CER mediano | Entity recall |
+|---|---|---|---|---|
+| CAMARA DE CIO | 3 | 0.218 | 0.066 | 0.643 |
+| CEDULA | 6 | 0.311 | 0.287 | 0.563 |
+| POLIZA | 3 | 0.229 | 0.174 | 0.768 |
+| rut | 3 | 0.330 | 0.359 | 0.889 |
+| **Global** | **15** | **0.280** | **0.270** | **0.685** |
+
+**Lectura:** el pipeline productivo reproduce el CER del benchmark aislado (0.276) y **mejora entity_recall global +24%** (0.685 vs 0.551 del benchmark) — atribuible al pipeline sin binarize (§2.1.3).
+
+**Gaps detectados en la corrida productiva:**
+
+1. **9 archivos `.jpg`/`.jpeg`** (7 cédulas/RUT + 2 TP) — Están en `image_manifest.csv` pero el nb 05 los filtra por una línea que resuelve `pdf_path` contra `data/raw/*.pdf`. Cierre trivial: quitar el filtro cuando `es_escaneado=True` (no necesita PDF original, usa la imagen procesada).
+
+2. **548 PDFs digitales** (CAMARA 196 + POLIZA 160 + CEDULA 29 + rut 154 + OTROS 9) — Nunca entraron al nb 05 porque el nb 04 solo llena el manifest con escaneados. El branch `extraer_pymupdf()` está implementado pero nunca se ejecuta. Cierre: notebook 05b dedicado a digitales, iterando `quality_report_completo.csv` donde `es_escaneado=False`, llamando `fitz.open(pdf).get_text()` por página — estimado <10 min.
+
+**Tareas completadas (cierre de §2.1 — 2026-04-18):**
+- [x] Cerrar gap 1: notebook 05b Parte A procesa las 9 imágenes vía EasyOCR
+- [x] Cerrar gap 2: notebook 05b Parte B procesa los 590 PDFs digitales vía PyMuPDF (11,576 páginas)
+- [x] Re-validación contra gold seed: métricas idénticas a §2.6.2 (merge limpio, sin corrupción)
+
+**Cobertura final del corpus_ocr.csv:**
+
+| Métrica | Valor |
+|---|---|
+| Documentos | 960 (95% del corpus original de 1,014) |
+| Páginas | 13,254 |
+| Chars extraídos | 32.6 M |
+| Motor EasyOCR | 1,678 páginas (escaneados) |
+| Motor PyMuPDF | 11,576 páginas (digitales) |
+| Errores | 0 |
+| Páginas vacías | 463 (páginas-imagen dentro de PDFs digitales — mayormente Pólizas) |
+
+**Tareas menores pendientes para §2.2:**
+- [ ] Normalizar columna `folder` (actualmente 10 valores por mojibake de digitales vs 5 reales)
+- [ ] Opcional: pasar las 463 páginas-imagen (dentro de digitales) por EasyOCR como tercer pase (recuperaría ~400 pág que hoy aparecen con `text_chars=0`)
+
 ### 2.1.2 Gold Standard (verdad absoluta para evaluación)
 > **Qué es:** conjunto reducido de documentos anotados manualmente con máxima rigurosidad, usado como referencia inmutable para medir OCR, LFs y modelo NER final. Sin gold no se puede responder "¿funciona mi modelo?".
 

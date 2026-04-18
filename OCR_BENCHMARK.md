@@ -219,6 +219,131 @@ Output: imagen **grayscale** (no binaria) replicada a 3 canales.
 
 **Docs excluidos (4):** PDFs con `n_pages=0` (corruptos desde Fase 1). Irrecuperables.
 
+### 2.6.2 Ejecución productiva — Notebook 05 (OCR del corpus escaneado)
+
+**Fecha:** 2026-04-17 → 2026-04-18 (corrida overnight)
+**Notebook:** [notebooks/05_ocr_corpus.ipynb](notebooks/05_ocr_corpus.ipynb)
+**Output:** `data/processed/corpus_ocr.csv` (39 MB, gitignored — PII) + `data/processed/corpus_ocr_summary.csv` (300 KB, commiteable)
+
+#### Resumen de corrida
+
+| Métrica | Valor |
+|---|---|
+| Motor | EasyOCR 1.7.2, CPU |
+| Páginas OCR'd | 1,669 / 1,678 (99.5%) |
+| Documentos | 403 / 412 (97.8%) |
+| Errores | 0 |
+| Páginas con 0 chars | 4 (documentos ilegibles) |
+| Chars totales extraídos | 3,537,950 |
+| Chars promedio/página | 2,120 |
+| Tiempo real de OCR | 23.42 horas |
+| Throughput | 50.5 s/página |
+| Bloques de checkpoint | 68 (`ocr_bloque_0001..0068.csv`) |
+
+**Desviación vs benchmark:** 50.5 s/pág vs 46 s/pág del benchmark (+10%). Atribuible a variabilidad térmica del equipo durante corrida continua de 23 h (se usó ventilador de soporte).
+
+#### Cobertura por tipología
+
+| Folder | Páginas OCR | Documentos OCR | s/página medio |
+|---|---|---|---|
+| CEDULA | 351 | 303 | 35.7 |
+| POLIZA | 1,024 | 59 | 52.5 |
+| CAMARA DE CIO | 160 | 16 | 71.7 |
+| rut | 114 | 22 | 50.6 |
+| OTROS | 20 | 3 | 40.4 |
+| **Total** | **1,669** | **403** | **50.5** |
+
+#### Validación contra gold seed — corpus_ocr.csv vs transcripciones humanas
+
+Archivo: [data/gold/ocr_corpus_validation.csv](data/gold/ocr_corpus_validation.csv)
+
+**Metodología:** se tomaron los primeros `pages_to_use` de cada doc en el corpus OCR (para comparar contra las páginas efectivamente transcritas), se normalizó (lowercase + whitespace colapsado), y se calculó CER + entity_recall con los mismos regex del benchmark.
+
+| Folder | N | CER medio | CER mediano | Entity recall medio |
+|---|---|---|---|---|
+| CAMARA DE CIO | 3 | 0.218 | 0.066 | 0.643 |
+| CEDULA | 6 | 0.311 | 0.287 | 0.563 |
+| POLIZA | 3 | 0.229 | 0.174 | 0.768 |
+| rut | 3 | 0.330 | 0.359 | 0.889 |
+| **Global** | **15** | **0.280** | **0.270** | **0.685** |
+
+**Comparación vs benchmark aislado (celda F del nb 03):**
+
+| Métrica | Benchmark | Productivo | Delta |
+|---|---|---|---|
+| CER global (media) | 0.276 | 0.280 | +1% (despreciable) |
+| Entity recall global | 0.551 | 0.685 | **+24%** |
+
+**Lectura:** el pipeline productivo reproduce la calidad del benchmark y mejora `entity_recall` en todas las tipologías. La mejora en entity recall es consistente con la eliminación de `binarize()` (§2.6.0) — el OCR ya no fragmenta dígitos de NIT/cédula por artefactos de umbralización.
+
+**Casos con CER alto (>0.40):** `CC Yerlis cabarcas.pdf` (0.443) y `camara de comercio 23 oct 2025` (0.542). Revisados a mano: son páginas con tablas densas y layout multi-columna donde EasyOCR intercala columnas. No es un problema del pipeline sino una limitación conocida del motor para estos layouts.
+
+#### Gaps detectados en la cobertura
+
+Dos fuentes de documentos **NO** entraron al corpus OCR productivo:
+
+1. **9 archivos de imagen directa (`.jpg`/`.jpeg`)** de CEDULA/rut/OTROS — Están en `image_manifest.csv` con imagen procesada en disco, pero el nb 05 los filtra por una línea que resuelve `pdf_path` vía `data/raw/*.pdf` (los salta porque no son PDF).
+   - **Causa raíz:** línea 197 del builder — `md5_index = {md5_file(p): p for p in DATA_RAW.rglob('*.pdf')}` luego filtro `img_manifest = img_manifest[img_manifest['pdf_path'] != '']`.
+   - **Impacto:** 9 docs escaneados (todos cédulas/RUT/TP de 1 página) no están en `corpus_ocr.csv`.
+
+2. **548 PDFs digitales** (CAMARA 196 + POLIZA 160 + CEDULA 29 + rut 154 + OTROS 9) — El nb 05 itera `image_manifest` que el nb 04 llena solo con escaneados. Por diseño los digitales deberían ir a PyMuPDF (decisión §1.2 del plan), pero ese paso nunca se ejecuta.
+   - **Causa raíz:** el nb 05 fue diseñado asumiendo que `image_manifest` tendría una fila por página de TODO el corpus (con `es_escaneado` como flag de branching). En la práctica, el nb 04 solo inserta escaneados, así que el branch digital del nb 05 (`extraer_pymupdf`) nunca se invoca.
+   - **Impacto:** 548 docs (54% del corpus) sin texto en `corpus_ocr.csv`. Grave para §2.2 en adelante.
+
+**Estado:** ambos gaps identificados al cerrar la corrida. Plan de cierre en §2.1.4 del plan maestro.
+
+### 2.6.3 Cierre de gaps — Notebook 05b (corpus textual completo)
+
+**Fecha:** 2026-04-18
+**Notebook:** [notebooks/05b_cierre_gaps_ocr.ipynb](notebooks/05b_cierre_gaps_ocr.ipynb)
+**Outputs actualizados:** `data/processed/corpus_ocr.csv` (ahora completo) + `corpus_ocr_summary.csv` + `data/processed/corpus_ocr_preV2_backup.csv` (respaldo del corpus solo-escaneados).
+
+#### Ejecución
+
+| Parte | Input | Motor | Filas producidas | Tiempo |
+|---|---|---|---|---|
+| A | 9 imágenes `.jpg`/`.jpeg` escaneadas | EasyOCR | 9 filas | ~8 min |
+| B | 590 PDFs digitales | PyMuPDF | 11,576 filas | ~10 min |
+| Consolidación + validación | — | — | — | ~1 min |
+
+#### Cobertura final
+
+| Métrica | Antes del 05b | Después del 05b | Delta |
+|---|---|---|---|
+| Documentos | 403 | **960** | +557 |
+| Páginas | 1,669 | **13,254** | +11,585 |
+| Chars extraídos | 3.5 M | **32.6 M** | +29.1 M (9×) |
+| Errores | 0 | 0 | — |
+
+**Páginas por motor en el corpus final:**
+
+| Engine | Páginas | % |
+|---|---|---|
+| `pymupdf` (digitales) | 11,576 | 87.3% |
+| `easyocr` (escaneados) | 1,678 | 12.7% |
+
+#### Validación post-cierre contra gold seed
+
+**Expectativa:** las métricas sobre los 15 docs del gold (todos escaneados) NO deben moverse vs §2.6.2. Objetivo: confirmar que el merge no corrompió filas previas.
+
+**Resultado (idéntico a §2.6.2):**
+
+| Folder | N | CER medio | Entity recall |
+|---|---|---|---|
+| CAMARA DE CIO | 3 | 0.218 | 0.643 |
+| CEDULA | 6 | 0.311 | 0.563 |
+| POLIZA | 3 | 0.229 | 0.768 |
+| rut | 3 | 0.330 | 0.889 |
+| **Global** | **15** | **0.280** | **0.685** |
+
+✅ Merge limpio — 0 diferencias en las 15 filas de validación.
+
+#### Hallazgos adicionales
+
+1. **463 páginas PyMuPDF con 0 chars** (4% del total) — Concentradas en Pólizas (432 pág). Son páginas anexas dentro de PDFs "digitales" que en realidad son imágenes embebidas (escaneados de garantías, firmas notariadas). No hay docs con *todas* las páginas vacías; son páginas sueltas mezcladas con texto real. Opción futura: pasar esas 463 páginas por EasyOCR como tercer pase. Por ahora se aceptan como `text_chars=0` trazable en `corpus_ocr_summary.csv`.
+
+2. **Mojibake en `folder` de digitales** — Los escaneados tienen `folder` ASCII (`CEDULA`, `POLIZA`, `CAMARA DE CIO`, `rut`, `OTROS`) porque nb 04 lo normalizó. Los digitales heredan `category` de `quality_report_completo.csv` con mojibake (`Cédula` → `CÃ\x83Â©dula`). Esto genera 10 folders aparentes en vez de 5. **Fix para §2.2:** añadir paso de normalización de `folder` al leer `corpus_ocr.csv` (mapeo 1-1 conocido, <5 líneas).
+
 ### 2.7 Decisión final
 
 **Aplicación de la regla de decisión del §1.5:**

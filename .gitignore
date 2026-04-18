@@ -7,6 +7,7 @@ data/processed/images/
 data/processed/image_blocks/
 data/processed/ocr_blocks/
 data/processed/corpus_ocr.csv
+data/processed/corpus_ocr_preV2_backup.csv
 data/gold/ocr_output/
 data/gold/transcriptions/
 

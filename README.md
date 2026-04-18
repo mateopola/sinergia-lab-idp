@@ -8,12 +8,12 @@
 
 ## Estado del proyecto
 
-**Última actualización:** 2026-04-17
+**Última actualización:** 2026-04-18
 
 | Fase | Estado | Notas |
 |---|---|---|
 | **Fase 1 — Comprensión de datos** | ✅ Completa | EDA sobre 1,014 docs SECOP. Corpus caracterizado (332 cédulas / 235 RUT / 219 pólizas / 212 CC / 14 otros; 416 escaneados / 548 digitales). Output: `quality_report_completo.csv`. |
-| **Fase 2 §2.1 — Preprocesamiento + OCR** | 🟢 Casi completa | Pipeline OpenCV aplicado (nb 04). Benchmark OCR ejecutado (nb 03) — ganador EasyOCR. Falta ejecutar nb 05 para generar `corpus_ocr.csv`. |
+| **Fase 2 §2.1 — Preprocesamiento + OCR** | ✅ Completa | Pipeline OpenCV aplicado (nb 04). Benchmark OCR ejecutado (nb 03) → EasyOCR. Corpus OCR productivo (nb 05, 23 h overnight) + cierre de gaps (nb 05b, 20 min) → `corpus_ocr.csv` con **13,254 páginas / 960 docs / 32.6 M chars**. EasyOCR sobre 1,678 escaneados (CER 0.28 vs gold, entity_recall 0.68) + PyMuPDF sobre 11,576 páginas de digitales. 0 errores. |
 | **Fase 2 §2.2 — Anotaciones** | ⏳ Pendiente | LFs de RUT implementadas. Pendiente anotación manual de Cédula/Póliza/CC en Label Studio. |
 | **Fase 2 §2.3 — Chunking** | ⏳ Pendiente | Funciones definidas (`chunk_document`). Falta aplicar al corpus para generar `train.jsonl` / `val.jsonl`. |
 | **Fase 2 §2.4 — Augmentación** | ⏳ Pendiente | Diferido hasta antes del fine-tuning. |
@@ -51,7 +51,8 @@ SinergiaLabProyecto/
 │   ├── 02_preprocesamiento_pipeline.ipynb     ← define funciones OpenCV + LFs
 │   ├── 03_benchmark_ocr.ipynb                 ← benchmark OCR (EasyOCR vs Tesseract)
 │   ├── 04_preprocesamiento_imagenes.ipynb     ← aplica pipeline a corpus escaneado
-│   ├── 05_ocr_corpus.ipynb                    ← OCR de 1,014 docs → corpus_ocr.csv
+│   ├── 05_ocr_corpus.ipynb                    ← OCR escaneados → corpus_ocr.csv
+│   ├── 05b_cierre_gaps_ocr.ipynb              ← añade 9 imgs + ~590 digitales (PyMuPDF)
 │   ├── build_notebook_XX.py                   ← builders de cada notebook
 │   └── run_fase1.py                           ← script ejecutado en Fase 1
 │
@@ -90,7 +91,8 @@ jupyter notebook
 | 2 | `02_preprocesamiento_pipeline.ipynb` | Funciones en `pipeline.py`, `aseguradoras_corpus.json` | ~15 min |
 | 3 | `03_benchmark_ocr.ipynb` | `ocr_benchmark.csv` + decisión en `OCR_BENCHMARK.md` | ~3h (manual + 20 min cómputo) |
 | 4 | `04_preprocesamiento_imagenes.ipynb` | `image_manifest.csv` + JPGs procesados | ~10 min |
-| 5 | `05_ocr_corpus.ipynb` | `corpus_ocr.csv` + `corpus_ocr_summary.csv` | ~12h overnight CPU |
+| 5 | `05_ocr_corpus.ipynb` | `corpus_ocr.csv` + `corpus_ocr_summary.csv` (solo escaneados) | ~12h overnight CPU |
+| 5b | `05b_cierre_gaps_ocr.ipynb` | Corpus OCR **completo** (añade 9 imágenes + ~590 digitales PyMuPDF) | ~20-25 min |
 
 **Caché por MD5:** los notebooks 04 y 05 son retomables. Si se interrumpen, al re-ejecutarlos continúan desde donde quedaron (detectan outputs en disco y saltan lo ya hecho).
 

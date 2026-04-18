@@ -300,10 +300,21 @@ def select_ocr(tipologia):
 
 #### Cédula — Anotación vía OCR Muestral (flujo alternativo)
 *Justificación: 93% son imágenes escaneadas → el texto debe extraerse con OCR antes de poder anotar.*
-- [ ] Aplicar EasyOCR sobre muestra representativa de **60 Cédulas** (30 alta calidad + 30 con ruido)
+- [x] **Seleccionar muestra estratificada de 60 Cédulas** (30 alta calidad + 30 ruidosas por `blur_score` Q1/Q3) — [Notebook 07](notebooks/07_preanotaciones_cedulas.ipynb) ejecutado 2026-04-18. Reproducible con `seed=42`. Outputs: `data/processed/cedulas_muestra_manifest.csv`, `cedulas_preanotaciones_labelstudio.json`, `cedulas_preanotaciones_summary.csv`.
+- [x] **Aplicar regex laxa con anchor (NUMERO|CEDULA|CC|IDENTIFICACION) para `numero` únicamente** — única entidad viable sobre texto OCR ruidoso:
+
+  | Estrato | Cobertura | Notas |
+  |---|---|---|
+  | alta_calidad | 47% (14/30) | Inesperadamente menor — anchors confundidos por contexto denso |
+  | ruidosa | 80% (24/30) | Texto más concentrado, anchors más claros |
+  | **Global** | **63.3% (38/60)** | Resto se anota manual |
+
+  Los otros 7 campos (`nombre_completo`, `apellidos`, `fecha_nacimiento`, `lugar_nacimiento`, `fecha_expedicion`, `lugar_expedicion`, `sexo`, `rh`) van manuales en Label Studio.
+
+- [ ] Cargar `cedulas_preanotaciones_labelstudio.json` en Label Studio → anotación bimodal (texto + imagen procesada)
 - [ ] Revisar y corregir manualmente la salida OCR en Label Studio (bounding boxes visuales)
 - [ ] Usar las 60 anotaciones corregidas como seed para fine-tuning; escalar con augmentación 3x
-- [ ] **No** intentar regex LFs sobre el texto extraído por OCR — la tasa de error OCR invalida la estrategia automática
+- [x] **Confirmado empíricamente:** regex LFs full no funcionan sobre Cédulas. Solo `numero` con anchor + verificación de longitud 7-10 dígitos da cobertura usable. Los otros campos fallan por variabilidad OCR.
 
 #### Pólizas — Anotación Manual (muestra aleatoria)
 > **Decisión v1.7:** Las entidades objetivo de Póliza (número_poliza, aseguradora, tomador, vigencia_desde, vigencia_hasta, valor_asegurado, prima_neta, amparo_principal) son estándar del contrato de seguro colombiano — iguales en todas las aseguradoras independientemente del layout. La identificación de aseguradora **no es requisito para estratificar** el set de entrenamiento. Selección: muestra aleatoria del corpus de Pólizas digitales.

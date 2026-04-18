@@ -3,6 +3,12 @@
 **Proyecto:** IDP para Documentos Colombianos SECOP | PUJ Especialización IA 2026  
 **Metodología:** CRISP-DM++ + Scrum + Design Thinking  
 **Alcance de esta hoja de ruta:** Desarrollo, Fine-Tuning y Evaluación del Modelo. Excluye API, backend y HITL.
+**Versión:** v2.0 (2026-04-18) — Fase 3 reescrita tras auditoría de fuentes.
+
+**Documentos vinculantes:**
+- [PROPUESTA_MODELOS.md](PROPUESTA_MODELOS.md) — fundamentación científica de los 9 candidatos (3 OCR + 3 Clasificación + 3 NER) con citas a papers revisados por pares.
+- [OCR_BENCHMARK.md](OCR_BENCHMARK.md) — bitácora del benchmark OCR y decisión (EasyOCR).
+- [Resumen_Investigacion_SinergIA_Lab.md](Resumen_Investigacion_SinergIA_Lab.md) — contexto académico y estado del arte.
 
 ---
 
@@ -403,127 +409,121 @@ from transformers import LayoutLMv3ForTokenClassification, LayoutLMv3Processor
 
 ## FASE 3 — MODELADO (El Núcleo)
 
-### 3.1 Arquitectura de Dos Etapas
+> **⚠️ REVISIÓN v2.0 — 2026-04-18:** esta fase fue reescrita. El esquema anterior ("Arquitectura de 2 Etapas: Arctic-Extract + Llama 3 8B") se abandonó por dos razones auditadas contra fuentes oficiales (abril 2026):
+> 1. **Arctic-Extract no tiene pesos abiertos** — es servicio gestionado en Snowflake Cortex, incompatible con soberanía de datos colombiana (Ley 1581/2012).
+> 2. **Llama 3 base (abril 2024) fue superado** por Llama 3.3, Qwen 2.5 y alternativas con mejor soporte de español.
+>
+> El nuevo esquema es **dos sub-fases con 3 candidatos cada una** (Clasificación + NER = 6 modelos), diseñado para comparación científica rigurosa. Todas las decisiones están documentadas en [PROPUESTA_MODELOS.md](PROPUESTA_MODELOS.md) con cita a paper revisado por pares o repositorio institucional oficial.
 
-#### Etapa A — Modelo de Visión-Lenguaje para Extracción de Tablas y Documentos Estructurados
-**Modelo:** Arctic-Extract (Snowflake, 6.6 GiB VRAM)  
-**Tarea:** Extracción sin OCR de tablas y campos estructurados de Cámara de Comercio y RUT
+### 3.0 Clasificación de tipo de documento
 
-> **✅ CONFIRMADO v1.3 — RUT como caso primario de Arctic-Extract:** El EDA del corpus mide en una página típica de RUT **97 bloques de texto** y **26.2% de densidad de área de texto**. Esta estructura tabular densa (micro-casillas DIAN con campos de 2-3 caracteres) supera la capacidad de extracción de Llama 3 basado en texto plano. Arctic-Extract, diseñado para formularios sin OCR, es la herramienta indicada. Dato registrado en `01_analisis_descriptivo_secop.ipynb` Hallazgo 2.
+**Tarea:** dado un documento (texto OCR + opcional imagen), predecir su tipología ∈ `{Cedula, RUT, Poliza, CC, Otros}`.
+**Por qué es necesaria:** en producción los documentos llegan sin clasificar; además, el modelo NER usa la tipología como señal de *routing* para aplicar el esquema correcto.
 
-- [ ] Instalar dependencias: `pip install snowflake-arctic-embed transformers accelerate`
-- [ ] Descargar modelo: `Snowflake/arctic-embed-l` o variante Arctic-Extract específica
-- [ ] Configurar inferencia en 8-bit con `BitsAndBytesConfig` para optimizar VRAM
-- [ ] Implementar pipeline de inferencia: `image → Arctic-Extract → structured_JSON`
-- [ ] Definir prompt template para extracción por tipología:
-  ```
-  "Extrae las siguientes entidades del documento colombiano tipo {doc_type}: {entity_list}. 
-   Responde ÚNICAMENTE en JSON válido con las claves especificadas. Si no encuentras un campo, usa null."
-  ```
-- [ ] Evaluar baseline zero-shot sobre 50 documentos del set de validación
-- [ ] Medir VRAM en uso: target < 12 GB para dejar margen al pipeline de fine-tuning
+**Candidatos (ver PROPUESTA_MODELOS.md §"Fase 2 — Clasificación"):**
 
-#### Etapa B — SLM Fine-Tuning con QLoRA para NER Especializado
-**Modelo Base:** Llama 3 8B (meta-llama/Meta-Llama-3-8B-Instruct)  
-**Framework de Fine-Tuning:** Unsloth + HuggingFace PEFT  
-**Cuantización:** 4-bit NF4 con doble cuantización
+| ID | Modelo | Qué es (breve) | Fundamentación científica | Hardware |
+|---|---|---|---|---|
+| **C-1** | **TF-IDF** (Term Frequency – Inverse Document Frequency) + Regresión Logística | Vectoriza cada documento pesando palabras por su frecuencia local y su rareza global en el corpus; luego un clasificador lineal decide la tipología sobre ese vector. | Spärck Jones, *Journal of Documentation* 1972 + Manning, Raghavan, Schütze, *Introduction to Information Retrieval* 2008 — baseline interpretable obligatorio | CPU, <10 MB |
+| **C-2** | **BETO** fine-tuned (`dccuchile/bert-base-spanish-wwm-cased`) | Modelo BERT de 110M parámetros pre-entrenado desde cero en ~3 GB de español por la Universidad de Chile. Se fine-tunea para clasificación de texto. | Cañete et al., PML4DC @ ICLR 2020 + Devlin et al., NAACL 2019 | GPU 6 GB |
+| **C-3** | **LayoutLMv3** fine-tuned | Modelo multimodal de Microsoft que ingesta texto + bounding boxes + parches de imagen en un mismo encoder. Estado del arte en documentos con layout. | Huang et al., ACM MM 2022 | GPU 8 GB |
 
-- [ ] Instalar entorno de fine-tuning:
-  ```bash
-  pip install unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git
-  pip install --no-deps trl peft accelerate bitsandbytes xformers
-  pip install datasets transformers sentencepiece protobuf
-  ```
-- [ ] Configurar carga del modelo base con cuantización 4-bit:
+**Tareas:**
+- [ ] Implementar `notebooks/06_clasificacion_baseline.ipynb` — entrena C-1 sobre `corpus_ocr.csv` con split 70/15/15 (train/val/test) estratificado por folder
+- [ ] Implementar `notebooks/07_clasificacion_beto.ipynb` — fine-tuning de C-2 con HuggingFace `Trainer`
+- [ ] Implementar `notebooks/08_clasificacion_layoutlmv3.ipynb` — fine-tuning de C-3 con tokens + bounding boxes
+- [ ] Evaluar los 3 sobre el mismo test set → reportar macro-F1, accuracy y matriz de confusión
+- [ ] Seleccionar ganador por macro-F1 (desempate por VRAM → latencia)
+
+### 3.1 Extracción NER (3 candidatos)
+
+**Tarea:** dado un documento con tipología conocida, extraer las entidades del esquema JSON definido en §2.2 del plan.
+
+**Candidatos (ver PROPUESTA_MODELOS.md §"Fase 3 — Extracción de Entidades"):**
+
+| ID | Modelo | Qué es (breve) | Fundamentación científica | Hardware |
+|---|---|---|---|---|
+| **N-1** | **spaCy + BETO-NER** (token classification con BIO tags) | Pipeline spaCy que clasifica cada token con etiquetas Beginning/Inside/Outside usando BETO como backbone. Discriminativo — **no puede alucinar** entidades. | spaCy Zenodo DOI + BETO PML4DC 2020 + CoNLL-2002 Shared Task | CPU / GPU 6 GB |
+| **N-2** | **Llama 3.3 8B-Instruct + QLoRA** (generativo, produce JSON) | LLM generativo de Meta ajustado con **QLoRA** (Quantized Low-Rank Adaptation: pesos base en 4 bits congelados + matrices pequeñas entrenables). Produce JSON directo con las entidades. | Grattafiori et al., arXiv:2407.21783 + Dettmers et al., NeurIPS 2023 + LlamaFactory ACL 2024 | GPU 24 GB |
+| **N-3** | **LayoutLMv3** fine-tuned para token classification (discriminativo, layout-aware) | Mismo modelo que C-3 pero entrenado para clasificar tokens con BIO. Usa el layout espacial — ideal para RUT y CC con formularios de estructura fija. | Huang et al., ACM MM 2022 + Colakoglu et al., arXiv:2502.18179 | GPU 8 GB |
+
+> **Nota sobre N-2:** la alternativa a Llama 3.3 dentro del mismo pipeline Unsloth/QLoRA es **Qwen2.5-7B-Instruct** (Qwen Team, arXiv:2412.15115). Si el fine-tuning de Llama 3.3 no converge, se intercambia sin cambiar el resto del pipeline.
+
+**Tareas para N-1 (spaCy + BETO-NER):**
+- [ ] Convertir anotaciones (§2.2) a formato BIO spans compatible con spaCy v3
+- [ ] Entrenar con `spacy train` usando config basado en `spacy-transformers` + `dccuchile/bert-base-spanish-wwm-cased`
+- [ ] Serializar modelo a `models/spacy-secop-ner-v1/` (<500 MB)
+- [ ] Evaluación: F1 por entidad con `spacy evaluate`
+
+**Tareas para N-2 (Llama 3.3 + QLoRA):**
+- [ ] Instalar entorno: `pip install unsloth[colab-new] trl peft accelerate bitsandbytes xformers datasets transformers`
+- [ ] Configurar carga del modelo base 4-bit:
   ```python
   from unsloth import FastLanguageModel
   model, tokenizer = FastLanguageModel.from_pretrained(
-      model_name="meta-llama/Meta-Llama-3-8B-Instruct",
+      model_name="meta-llama/Llama-3.3-8B-Instruct",  # o "Qwen/Qwen2.5-7B-Instruct"
       max_seq_length=2048,
-      dtype=None,  # auto-detect
+      dtype=None,
       load_in_4bit=True,
   )
   ```
-- [ ] Configurar adaptadores LoRA con parámetros optimizados:
-  ```python
-  model = FastLanguageModel.get_peft_model(
-      model,
-      r=16,                    # rank — balance entre capacidad y VRAM
-      target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
-                      "gate_proj", "up_proj", "down_proj"],
-      lora_alpha=16,
-      lora_dropout=0.05,
-      bias="none",
-      use_gradient_checkpointing="unsloth",  # 30% ahorro VRAM
-      random_state=42,
-  )
-  ```
-- [ ] Diseñar plantilla de prompt estructurado para NER en español colombiano:
+- [ ] Configurar adaptadores LoRA (r=16, alpha=16, dropout=0.05, target q/k/v/o + gate/up/down_proj)
+- [ ] Template de prompt para NER en español colombiano:
   ```
   <|begin_of_text|><|start_header_id|>system<|end_header_id|>
-  Eres un experto extractor de información de documentos oficiales colombianos. 
-  Tu tarea es identificar y extraer entidades específicas en formato JSON estructurado.
+  Eres un experto extractor de información de documentos oficiales colombianos.
   Responde SOLO con JSON válido, sin texto adicional.<|eot_id|>
   <|start_header_id|>user<|end_header_id|>
   Documento tipo: {doc_type}
-  Texto del documento:
-  {document_text}
+  Texto: {document_text}
   Extrae: {entities_to_extract}<|eot_id|>
   <|start_header_id|>assistant<|end_header_id|>
   {expected_json_output}<|eot_id|>
   ```
-- [ ] Configurar SFTTrainer con hiperparámetros para GPU 24 GB:
-  ```python
-  from trl import SFTTrainer
-  from transformers import TrainingArguments
-  
-  training_args = TrainingArguments(
-      output_dir="./checkpoints/llama3-secop-ner",
-      num_train_epochs=3,
-      per_device_train_batch_size=2,
-      gradient_accumulation_steps=8,   # effective batch = 16
-      warmup_steps=100,
-      learning_rate=2e-4,
-      fp16=True,                        # mixed precision
-      logging_steps=25,
-      save_strategy="epoch",
-      evaluation_strategy="epoch",
-      load_best_model_at_end=True,
-      metric_for_best_model="eval_f1",
-      optim="adamw_8bit",              # optimizador 8-bit para VRAM
-      lr_scheduler_type="cosine",
-      seed=42,
-      report_to="tensorboard",
-  )
-  ```
-- [ ] Implementar callback de early stopping: paciencia de 2 épocas
-- [ ] Monitorear VRAM durante entrenamiento: target pico < 22 GB
-- [ ] Guardar modelo fine-tuneado: `models/llama3-secop-ner-v1/`
-- [ ] Exportar a GGUF 4-bit para servicio con Ollama:
-  ```python
-  model.save_pretrained_gguf("models/llama3-secop-ner-v1-gguf", 
-                              tokenizer, quantization_method="q4_k_m")
-  ```
+- [ ] SFTTrainer con hiperparámetros para GPU 24 GB: 3 épocas, batch 2 + grad_accum 8, LR 2e-4, cosine scheduler, adamw_8bit, early stopping paciencia 2
+- [ ] Guardar modelo: `models/llama33-secop-ner-v1/`
+- [ ] Exportar a GGUF 4-bit si el modelo gana (para despliegue con Ollama — ver §3.2)
 
-### 3.2 Configuración de Ollama para Inferencia Local
+**Tareas para N-3 (LayoutLMv3 token classification):**
+- [ ] Convertir anotaciones a formato con bounding boxes por token (extensión del esquema §2.2)
+- [ ] Fine-tuning con `transformers.LayoutLMv3ForTokenClassification` sobre pares (texto, bbox, imagen)
+- [ ] Evaluación: F1 por entidad, comparar contra N-1/N-2 especialmente en RUT (97 bloques) y CC (multipágina)
+
+### 3.2 Despliegue con Ollama (condicional a ganador de N-2)
+
+> **Condicional:** esta sección solo aplica si **N-2 gana la comparación de §4.3**. Si el ganador es N-1 (spaCy) o N-3 (LayoutLMv3), se sirve con FastAPI / un wrapper nativo de spaCy/transformers, no con Ollama.
+
 - [ ] Crear `Modelfile` para Ollama:
   ```
-  FROM ./models/llama3-secop-ner-v1-gguf/model.gguf
+  FROM ./models/llama33-secop-ner-v1-gguf/model.gguf
   SYSTEM "Eres SinergIA, experto extractor de documentos colombianos SECOP."
   PARAMETER temperature 0.1
   PARAMETER top_p 0.9
   PARAMETER num_ctx 2048
   ```
-- [ ] Registrar modelo: `ollama create sinergialab-ner -f Modelfile`
-- [ ] Validar inferencia local: `ollama run sinergialab-ner "Test de carga"`
+- [ ] Registrar: `ollama create sinergialab-ner -f Modelfile`
+- [ ] Validar latencia: `ollama run sinergialab-ner "..."` < 5s por doc 1 página
 
 ### 3.3 Entregables de Fase 3
-- [ ] Notebook `03_finetuning_llama3_qlora.ipynb` con entrenamiento documentado
-- [ ] `models/llama3-secop-ner-v1/` — modelo PEFT guardado
-- [ ] `models/llama3-secop-ner-v1-gguf/` — modelo GGUF para Ollama
-- [ ] `checkpoints/` — checkpoints por época con métricas de entrenamiento
-- [ ] `logs/tensorboard/` — logs de entrenamiento para visualización
-- [ ] Gráficas de training/validation loss por época
+
+**Clasificación:**
+- [ ] `notebooks/06_clasificacion_baseline.ipynb` (C-1)
+- [ ] `notebooks/07_clasificacion_beto.ipynb` (C-2)
+- [ ] `notebooks/08_clasificacion_layoutlmv3.ipynb` (C-3)
+- [ ] `reports/clasificacion_resultados.csv` — tabla macro-F1 + accuracy + VRAM por candidato
+- [ ] Ganador documentado en `reports/decision_clasificacion.md`
+
+**NER:**
+- [ ] `notebooks/09_ner_spacy.ipynb` (N-1)
+- [ ] `notebooks/10_ner_llama33_qlora.ipynb` (N-2)
+- [ ] `notebooks/11_ner_layoutlmv3.ipynb` (N-3)
+- [ ] `models/spacy-secop-ner-v1/`, `models/llama33-secop-ner-v1/`, `models/layoutlmv3-secop-ner-v1/`
+- [ ] `reports/ner_resultados.csv` — F1 por entidad + hallucination rate (solo N-2) + latencia
+- [ ] Ganador documentado en `reports/decision_ner.md`
+
+**Checkpoints y logs:**
+- [ ] `checkpoints/` — checkpoints por época para los 3 modelos entrenables
+- [ ] `logs/tensorboard/` — curvas de loss/F1 comparadas entre candidatos
 
 ---
 
@@ -552,36 +552,59 @@ from transformers import LayoutLMv3ForTokenClassification, LayoutLMv3Processor
 - [ ] Detectar negativas falsas críticas: entidades de alto impacto legal que el modelo NO extrae (NIT, número de cédula)
 
 ### 4.3 Diseño Experimental
-- [ ] **Experimento 1 — Baseline:** PaddleOCR + regex → F1 por tipología (cota inferior)
-- [ ] **Experimento 2 — Zero-Shot:** Llama 3 8B sin fine-tuning sobre texto PaddleOCR → F1
-- [ ] **Experimento 3 — Fine-Tuned:** Llama 3 8B + QLoRA entrenado → F1 por tipología
-- [ ] **Experimento 4 — VLM:** Arctic-Extract sobre imagen directa → F1 por tipología
-- [ ] **Experimento 5 — Ensemble:** Arctic-Extract (tablas) + Llama 3 (texto libre) → F1 combinado
-  > **Gestión de VRAM obligatoria para Experimento 5:** Inferencia secuencial — nunca cargar ambos modelos simultáneamente.
-  > Presupuesto VRAM estimado: Arctic-Extract ~6.6 GB + overhead ~2 GB = ~9 GB pico. Llama 3 4-bit ~5 GB + overhead ~2 GB = ~7 GB pico.
-  ```python
-  # Patrón de ejecución del Experimento 5 — inferencia secuencial con liberación explícita
-  import torch, gc
 
-  # — Etapa 1: Arctic-Extract —
-  model_arctic = load_arctic_extract()          # ~9 GB VRAM
-  results_arctic = run_batch(model_arctic, val_docs)
-  save_intermediate(results_arctic, 'exp5_arctic_raw.json')
-  del model_arctic
-  torch.cuda.empty_cache(); gc.collect()        # liberar antes de cargar Llama
-  assert torch.cuda.memory_allocated() < 1e9, "VRAM no liberada correctamente"
+> **Reescrito v2.0 (2026-04-18):** de 5 experimentos (con PaddleOCR descartado y Arctic-Extract sin pesos abiertos) a **6 experimentos comparables + 3 ablaciones opcionales**, alineados con los candidatos de §3.0 y §3.1.
 
-  # — Etapa 2: Llama 3 fine-tuned —
-  model_llama = load_llama_finetuned()          # ~7 GB VRAM
-  results_llama = run_batch(model_llama, val_docs)
-  save_intermediate(results_llama, 'exp5_llama_raw.json')
-  del model_llama
-  torch.cuda.empty_cache(); gc.collect()
+**Principios del diseño:**
+1. Mismo split 70/15/15 estratificado por tipología, semilla fija = 42.
+2. Mismo gold set para evaluación final (15 docs ya existentes + extensión a 70 según §2.1.2).
+3. Cada experimento reporta: hiperparámetros, tiempo de entrenamiento, VRAM pico, tamaño del modelo en disco, métricas primarias y secundarias.
 
-  # — Etapa 3: Merge en CPU —
-  final_results = merge_ensemble(results_arctic, results_llama)  # sin GPU
-  ```
-- [ ] Documentar tabla comparativa de experimentos con métricas, VRAM pico y latencia
+**Experimentos de Clasificación (Fase 3 §3.0):**
+
+| # | ID | Modelo | Input | Métrica primaria |
+|---|---|---|---|---|
+| 1 | C-1 | TF-IDF + Regresión Logística | Texto OCR | Macro-F1 (cota inferior clásica) |
+| 2 | C-2 | BETO fine-tuned | Texto OCR | Macro-F1 |
+| 3 | C-3 | LayoutLMv3 fine-tuned | Texto + bbox + imagen | Macro-F1 |
+
+**Experimentos de NER (Fase 3 §3.1):**
+
+| # | ID | Modelo | Input | Métrica primaria | Métricas adicionales |
+|---|---|---|---|---|---|
+| 4 | N-1 | spaCy + BETO-NER | Texto OCR con BIO tags | F1 por entidad | Latencia, tamaño modelo |
+| 5 | N-2 | Llama 3.3 + QLoRA (o Qwen2.5-7B) | Texto OCR + prompt estructurado | F1 por entidad | **Hallucination rate** (target <2%), latencia |
+| 6 | N-3 | LayoutLMv3 token classification | Texto + bbox por token + imagen | F1 por entidad (por tipología, atención en RUT/CC) | Latencia |
+
+**Ablaciones opcionales (condicionales al resultado de los 6 experimentos primarios):**
+
+| # | Ablación | Cuándo ejecutar |
+|---|---|---|
+| A1 | Pipeline completo: clasificador ganador → NER ganador (end-to-end) | Siempre que exista ganador de cada sub-fase |
+| A2 | NER-ganador con prompt **sin** doc_type (inferencia libre del tipo) | Si N-2 gana, para medir dependencia del hint de tipología |
+| A3 | Ensemble N-1 (span) + N-3 (layout) con reconciliación por reglas | Si ningún modelo supera F1 objetivo en alguna tipología |
+
+**Gestión de VRAM (aplicable a experimentos 5 y A3):**
+Inferencia secuencial — nunca cargar dos modelos simultáneamente. Patrón:
+```python
+import torch, gc
+
+model_a = load_model_a()                     # ~8 GB VRAM
+results_a = run_batch(model_a, val_docs)
+del model_a; torch.cuda.empty_cache(); gc.collect()
+assert torch.cuda.memory_allocated() < 1e9, "VRAM no liberada"
+
+model_b = load_model_b()                     # ~7 GB VRAM
+results_b = run_batch(model_b, val_docs)
+del model_b; torch.cuda.empty_cache(); gc.collect()
+
+final = merge_results(results_a, results_b)   # en CPU
+```
+
+- [ ] Ejecutar los 6 experimentos primarios
+- [ ] Evaluar ablaciones A1-A3 según criterios documentados
+- [ ] Generar tabla comparativa final en `reports/experiment_results.csv` con: ID, modelo, F1 primario, F1 secundario, VRAM pico, tamaño MB, latencia ms/doc
+- [ ] Documentar decisión final en `reports/decision_arquitectura.md` — pipeline ganador = Clasificador_X + NER_Y
 
 ### 4.4 Pruebas de Inferencia y Latencia
 - [ ] Medir latencia de inferencia con Ollama: target ≤ 5s para documentos de 1 página
@@ -596,10 +619,11 @@ from transformers import LayoutLMv3ForTokenClassification, LayoutLMv3Processor
 - [ ] Definir acciones correctivas: más datos de augmentación, ajuste de prompt, o post-procesamiento regex
 
 ### 4.6 Entregables de Fase 4
-- [ ] Notebook `04_evaluacion_metricas.ipynb` con evaluación completa
-- [ ] `reports/experiment_results.csv` — tabla comparativa de los 5 experimentos
+- [ ] Notebook `12_evaluacion_metricas.ipynb` con evaluación completa de los 6 experimentos primarios + ablaciones
+- [ ] `reports/experiment_results.csv` — tabla comparativa de los 6 experimentos (+ ablaciones si aplicaron)
 - [ ] `reports/error_analysis.md` — análisis cualitativo de fallos
-- [ ] Decisión documentada: ¿el modelo cumple umbrales para avanzar a la siguiente fase?
+- [ ] `reports/decision_arquitectura.md` — pipeline ganador (Clasificador + NER) con justificación
+- [ ] Decisión documentada: ¿el pipeline cumple umbrales para avanzar a la siguiente fase?
 
 ---
 

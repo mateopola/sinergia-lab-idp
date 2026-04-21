@@ -320,13 +320,14 @@ def select_ocr(tipologia):
 > **Decisión v1.7:** Las entidades objetivo de Póliza (número_poliza, aseguradora, tomador, vigencia_desde, vigencia_hasta, valor_asegurado, prima_neta, amparo_principal) son estándar del contrato de seguro colombiano — iguales en todas las aseguradoras independientemente del layout. La identificación de aseguradora **no es requisito para estratificar** el set de entrenamiento. Selección: muestra aleatoria del corpus de Pólizas digitales.
 
 - [x] Identificar aseguradoras presentes en el corpus — ejecutado en Notebook 02 (`aseguradoras_corpus.json`). Dato informativo, no bloqueante.
-- [ ] Seleccionar aleatoriamente **80 Pólizas digitales** — conjunto de entrenamiento
-- [ ] Anotar manualmente **80 Pólizas** — conjunto de entrenamiento
-- [ ] Anotar **40 Pólizas** (muestra aleatoria) — conjunto de validación sin augmentación
+- [x] **Seleccionar aleatoriamente 120 Pólizas (80 train + 40 val)** — [Notebook 08](notebooks/08_preanotaciones_polizas.ipynb) con seed=42. Reproducible. Cobertura smoke test: `numero_poliza` 70%, `aseguradora` 50% (lookup). Outputs: `data/processed/polizas_muestra_manifest.csv`, `polizas_preanotaciones_labelstudio.json`, `polizas_preanotaciones_summary.csv`. Ver [reports/nb08_resultados.md](reports/nb08_resultados.md).
+- [ ] Anotar manualmente **80 Pólizas** — conjunto de entrenamiento (en Label Studio, ~20 min/doc)
+- [ ] Anotar **40 Pólizas** — conjunto de validación sin augmentación
 
 #### Cámara de Comercio — Anotación Manual Reducida
 *Justificación: formato consistente entre cámaras, solo varía logo. Layout-aware chunking es viable.*
-- [ ] Anotar manualmente **80 documentos** — conjunto de entrenamiento
+- [x] **Seleccionar 120 CC (80 train + 40 val)** — [Notebook 09](notebooks/09_preanotaciones_camara_comercio.ipynb) con seed=42. Cobertura smoke test: `razon_social` 96.7%, `matricula` 80.8%, `nit` 64.2%. LFs de RUT reutilizadas + regex propia para matrícula mercantil. Outputs: `camara_comercio_muestra_manifest.csv`, `camara_comercio_preanotaciones_labelstudio.json`, `camara_comercio_preanotaciones_summary.csv`. Ver [reports/nb09_resultados.md](reports/nb09_resultados.md).
+- [ ] Anotar manualmente **80 documentos** — conjunto de entrenamiento (~25 min/doc)
   - *Reducido de 200 → 80: mínimo viable para fine-tuning con augmentación 3x aplicada posteriormente*
 - [ ] Anotar **40 documentos** — conjunto de validación sin augmentación
 

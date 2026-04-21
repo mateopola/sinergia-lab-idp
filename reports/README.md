@@ -24,8 +24,8 @@ Cada reporte sigue el esquema:
 | 05b | `05b_cierre_gaps_ocr.ipynb` | 2.1.4 | [nb05b_resultados.md](nb05b_resultados.md) | ✅ |
 | 06 | `06_preanotaciones_rut.ipynb` | 2.2 | [nb06_resultados.md](nb06_resultados.md) | ✅ |
 | 07 | `07_preanotaciones_cedulas.ipynb` | 2.2 | [nb07_resultados.md](nb07_resultados.md) | ✅ |
-| 08 | `08_preanotaciones_polizas.ipynb` | 2.2 | [nb08_resultados.md](nb08_resultados.md) | ⏳ pendiente ejecución |
-| 09 | `09_preanotaciones_camara_comercio.ipynb` | 2.2 | [nb09_resultados.md](nb09_resultados.md) | ⏳ pendiente ejecución |
+| 08 | `08_preanotaciones_polizas.ipynb` | 2.2 | [nb08_resultados.md](nb08_resultados.md) | 🟢 notebook listo + smoke test |
+| 09 | `09_preanotaciones_camara_comercio.ipynb` | 2.2 | [nb09_resultados.md](nb09_resultados.md) | 🟢 notebook listo + smoke test |
 
 ## Convenciones
 

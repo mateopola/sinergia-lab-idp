@@ -14,7 +14,7 @@
 |---|---|---|
 | **Fase 1 — Comprensión de datos** | ✅ Completa | EDA sobre 1,014 docs SECOP. Corpus caracterizado (332 cédulas / 235 RUT / 219 pólizas / 212 CC / 14 otros; 416 escaneados / 548 digitales). Output: `quality_report_completo.csv`. |
 | **Fase 2 §2.1 — Preprocesamiento + OCR** | ✅ Completa | Pipeline OpenCV aplicado (nb 04). Benchmark OCR ejecutado (nb 03) → EasyOCR. Corpus OCR productivo (nb 05, 23 h overnight) + cierre de gaps (nb 05b, 20 min) → `corpus_ocr.csv` con **13,254 páginas / 960 docs / 32.6 M chars**. EasyOCR sobre 1,678 escaneados (CER 0.28 vs gold, entity_recall 0.68) + PyMuPDF sobre 11,576 páginas de digitales. 0 errores. |
-| **Fase 2 §2.2 — Anotaciones** | 🟡 En curso | Pre-anotaciones RUT (nb 06) 216 docs + muestra Cédulas estratificada (nb 07) 60 docs. Pendientes: Label Studio + anotación Póliza (nb 08) / CC (nb 09). |
+| **Fase 2 §2.2 — Anotaciones** | 🟡 En curso | Pipeline completo de 4 notebooks listo: RUT 216 docs · Cédulas 60 · Pólizas 120 · CC 120 = **516 docs pre-anotados**. Pendiente: Label Studio (revisión humana). |
 | **Fase 2 §2.3 — Chunking** | ⏳ Pendiente | Funciones definidas (`chunk_document`). Falta aplicar al corpus para generar `train.jsonl` / `val.jsonl`. |
 | **Fase 2 §2.4 — Augmentación** | ⏳ Pendiente | Diferido hasta antes del fine-tuning. |
 | **Fase 3 — Modelado** | ⏳ Pendiente | Arctic-Extract + Llama 3 8B QLoRA. |
@@ -55,6 +55,8 @@ SinergiaLabProyecto/
 │   ├── 05b_cierre_gaps_ocr.ipynb              ← añade 9 imgs + ~590 digitales (PyMuPDF)
 │   ├── 06_preanotaciones_rut.ipynb            ← weak supervision: LFs regex sobre 216 RUT → Label Studio
 │   ├── 07_preanotaciones_cedulas.ipynb        ← muestra estratificada 60 Cédulas + regex numero → Label Studio bimodal
+│   ├── 08_preanotaciones_polizas.ipynb        ← muestra aleatoria 120 Pólizas (80+40) + regex numero + lookup aseguradora
+│   ├── 09_preanotaciones_camara_comercio.ipynb ← muestra aleatoria 120 CC (80+40) + regex nit/matricula/razon_social
 │   ├── build_notebook_XX.py                   ← builders de cada notebook
 │   └── run_fase1.py                           ← script ejecutado en Fase 1
 │
@@ -97,6 +99,8 @@ jupyter notebook
 | 5b | `05b_cierre_gaps_ocr.ipynb` | Corpus OCR **completo** (añade 9 imágenes + ~590 digitales PyMuPDF) | ~20-25 min |
 | 6 | `06_preanotaciones_rut.ipynb` | Pre-anotaciones RUT vía Weak Supervision (Snorkel/LFs) + tareas Label Studio | ~3 min |
 | 7 | `07_preanotaciones_cedulas.ipynb` | Muestreo estratificado 60 Cédulas + regex `numero` + tareas Label Studio bimodal (texto + imagen) | ~2 min |
+| 8 | `08_preanotaciones_polizas.ipynb` | Muestra aleatoria 120 Pólizas (80 train + 40 val) + regex `numero_poliza` + lookup `aseguradora` | ~3 min |
+| 9 | `09_preanotaciones_camara_comercio.ipynb` | Muestra aleatoria 120 CC (80+40) + regex `nit`/`matricula`/`razon_social` | ~3 min |
 
 **Caché por MD5:** los notebooks 04 y 05 son retomables. Si se interrumpen, al re-ejecutarlos continúan desde donde quedaron (detectan outputs en disco y saltan lo ya hecho).
 

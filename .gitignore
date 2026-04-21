@@ -11,6 +11,8 @@ data/processed/corpus_ocr_preV2_backup.csv
 data/processed/rut_preanotaciones.jsonl
 data/processed/rut_preanotaciones_labelstudio.json
 data/processed/cedulas_preanotaciones_labelstudio.json
+data/processed/polizas_preanotaciones_labelstudio.json
+data/processed/camara_comercio_preanotaciones_labelstudio.json
 data/gold/ocr_output/
 data/gold/transcriptions/
 

@@ -2,6 +2,9 @@
 data/raw/
 data/processed/quality_report_completo.csv
 
+# ─── Outputs extraidos de notebooks (temporales) ─────────────────────────────
+_nb_outputs/
+
 # ─── Outputs pesados del pipeline OCR (regenerables) ─────────────────────────
 data/processed/images/
 data/processed/image_blocks/

@@ -1,0 +1,2 @@
+total_muestra,train,val,cobertura_nit,cobertura_razon_social,cobertura_matricula,seed
+120,80,40,0.642,0.967,0.808,42

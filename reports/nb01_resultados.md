@@ -1,106 +1,180 @@
-# Resultados — Notebook 01 · Análisis Descriptivo del Corpus SECOP
+# Capítulo 1 — El diagnóstico: quiénes son estos 1,014 documentos
 
-**Fase CRISP-DM++:** 1 — Comprensión de Datos
 **Notebook:** [01_analisis_descriptivo_secop.ipynb](../notebooks/01_analisis_descriptivo_secop.ipynb)
 **Fecha de ejecución:** 2026-04-08
-**Output principal:** `data/processed/quality_report_completo.csv` (gitignored — PII)
+**Fase CRISP-DM++:** 1 — Comprensión de los Datos
+**Artefactos:** `data/processed/quality_report_completo.csv` · 10 figuras (`fig01..fig10.png`) · `fase1_decisiones.json`
 
 ---
 
-## 1. Metadatos de ejecución
+## 1. El contexto — ¿por qué empezar por aquí?
 
-- Python 3.12, entorno local CPU
-- Duración: ~45 min
-- Input: `data/raw/` (1,014 PDFs + 9 imágenes .jpg/.jpeg)
-- Output: `quality_report_completo.csv`, `fig01..fig10.png`, `near_duplicates.json`, `vocabulario_dominio.json`, `portadas_detectadas.json`
+Antes de construir pipeline alguno, había que responder una pregunta básica: **¿qué tipo de corpus tenemos?** Un sistema IDP (Intelligent Document Processing) que trate 1,014 documentos del SECOP como objetos homogéneos está condenado a fallar. La metodología CRISP-DM (Wirth & Hipp, 2000 [1]) es explícita: la fase de comprensión de datos define cuál será el sistema.
 
-## 2. Resumen cuantitativo
+La pregunta práctica del proyecto:
 
-### 2.1 Inventario por tipología
+> *¿Hay variabilidad estructural, de calidad visual o de longitud textual que exija estrategias diferenciadas por tipología?*
 
-| Tipología | Documentos | % del corpus |
-|---|---|---|
-| Cédula | 334 | 32.9% |
-| RUT | 235 | 23.2% |
-| Póliza | 219 | 21.6% |
-| Cámara de Comercio | 212 | 20.9% |
-| Otros | 14 | 1.4% |
-| **Total** | **1,014** | **100%** |
+Si la respuesta es "sí, mucha", entonces el diseño del sistema debe ser **adaptativo**, no monolítico.
 
-### 2.2 Distribución escaneados vs digitales
+## 2. La hipótesis
 
-| Categoría | Escaneados | Digitales | % escaneados |
-|---|---|---|---|
-| Cédula | 312 / 334 | 22 / 334 | 93% |
-| RUT | 35 / 235 | 200 / 235 | 15% |
-| Póliza | 59 / 219 | 160 / 219 | 27% |
-| Cámara de Comercio | 16 / 212 | 196 / 212 | 8% |
-| **Corpus** | **~422 / 1,014** | **~592 / 1,014** | **42%** |
+Planteamos la hipótesis siguiente, informada por el survey de Document AI de Wang et al. (2025) [2]:
 
-### 2.3 Textometría (tokens BPE estimados, factor x1.25)
+> Los cuatro tipos documentales del corpus (Cédula, RUT, Póliza, Cámara de Comercio) tienen distribuciones estadísticamente distintas en (a) proporción escaneada vs digital, (b) densidad textual, (c) longitud y (d) calidad visual. Por tanto, un pipeline único es inadecuado.
 
-| Tipología | Mediana BPE | Docs > 1,800 tokens |
-|---|---|---|
-| Cédula | ~0 (escaneado) | 0 |
-| RUT | 1,861 | 151 (64%) |
-| Póliza | ~806 | 31 (14%) |
-| Cámara de Comercio | ~1,772 | 96 (45%) |
+## 3. El método
 
-### 2.4 Calidad visual
+Sobre los 1,014 PDFs + 9 imágenes directas (.jpg/.jpeg) del corpus SECOP:
 
-- `blur_score` mediano del corpus: ~1,469
-- Cédulas: 324 APTO / 8 REQUIERE_PREPROCESAMIENTO / 2 DESCARTADO
+1. **Inventario por categoría** con deduplicación MinHash
+2. **Extracción de metadata:** tamaño, MD5, número de páginas (via PyMuPDF)
+3. **Calidad visual:** `blur_score` (varianza del Laplaciano), `contrast`, `brightness` sobre página 1
+4. **Densidad textual:** `char_count` via PyMuPDF (sin OCR). Si `char_count < 100` → escaneado heurístico
+5. **Complejidad:** índices Flesch y Szigriszt-Pazos [3] para legibilidad en español
+6. **Estimación de tokens BPE** con factor de corrección empírico x1.25 (validado contra Llama 3 tokenizer)
+7. **Detección de portadas:** heurística `lexicon < 50 AND blocks < 5`
 
-## 3. Hallazgos
+## 4. Los resultados — los números del corpus
 
-### 🔴 Hallazgo 1 — Cédulas son mayoritariamente escaneadas (93%)
+### 4.1 Inventario confirmado (prints reales del reporte)
 
-Implica que las Labeling Functions regex **no son aplicables** a esta tipología (decisión documentada en PLAN_MODELADO_CRISPDM.md §2.2 ALERTA v1.3). Requiere flujo alternativo con anotación manual sobre salida OCR.
+```
+Total docs: 1014
+Por categoria:
+  Cédula                334    (32.9%)
+  RUT                   235    (23.2%)
+  Póliza                219    (21.6%)
+  Cámara de Comercio    212    (20.9%)
+  Otros                  14     (1.4%)
 
-### 🟢 Hallazgo 2 — RUT es densamente tabular
+Por extensión:
+  .pdf     1005
+  .jpeg       5
+  .jpg        4
+```
 
-Una página típica de RUT tiene **97 bloques de texto** y **26.2% densidad de área de texto**. Esta estructura tabular con micro-casillas DIAN supera la capacidad de extracción de modelos basados en texto plano — justifica evaluar candidatos layout-aware en Fase 3.
+### 4.2 Calidad visual — 98.4% aptos
 
-### 🟡 Hallazgo 3 — RUT supera el límite de chunking
+```
+quality_label:
+  APTO                         998   (98.4%)
+  REQUIERE_PREPROCESAMIENTO      9    (0.9%)
+  ERROR                          4    (0.4%)
+  DESCARTADO                     3    (0.3%)
+```
 
-64% de los RUT (151/235) superan 1,800 tokens BPE. Corrige la asunción del plan v1.1-v1.3 ("RUT sin chunking") → **RUT requiere ventana deslizante**, igual que Pólizas (§2.3 del plan).
+**Hallazgo:** la mayoría del corpus es legible en términos visuales — el cuello de botella no es calidad de captura, es **formato** (digital vs escaneado).
 
-### 🟢 Hallazgo 4 — Vocabulario CIIU contamina embeddings de RUT
+### 4.3 Distribución escaneado vs digital (heurística `char_count < 100`)
 
-El formulario DIAN imprime la lista completa de clasificaciones CIIU (~300 entradas) en cada RUT. Requiere filtrado específico (`filtrar_ciiu_rut()` en pipeline.py) para generar embeddings/TF-IDF limpios sin perder valores de campos.
+```
+                        digital  escaneado
+Cédula                     15        319    (93.4% escaneada)
+RUT                       208         27    (11.5% escaneada)
+Póliza                    139         80    (36.5% escaneada)
+Cámara de Comercio        192         20     (9.4% escaneada)
+Otros                       9          5
+```
 
-### 🟡 Hallazgo 5 — Portadas detectables solo en Pólizas y CC
+**Este es el hallazgo estructural más importante del corpus.**
 
-- RUT: 0/20 portadas (plantilla DIAN siempre inicia con datos)
-- Póliza: 5/20 (25%) — portadas corporativas de aseguradoras
-- Cámara de Comercio: 2/20 (10%)
-- Cédula: desactivado (3 falsos positivos — ver nb02)
+### 4.4 Complejidad textual por tipología (índice Flesch mediana)
 
-## 4. Anomalías y limitaciones
+| Tipología | Flesch | Palabras/doc (mediana) | Tokens BPE x1.25 | Estrategia chunking |
+|---|---|---|---|---|
+| Cédula | 58.0 | 0 (escaneada) | 0 | `sin_chunking` |
+| RUT | **84.5** | 1,117 | **1,861** | `sliding_window_30pct` |
+| Póliza | 61.0 | 484 | 806 | `sliding_window_30pct` |
+| Cámara de Comercio | 51.2 | 1,063 | 1,772 | `sliding_window_30pct` |
+| Otros | 49.3 | 278 | 370 | `sin_chunking` |
 
-- 2 Cédulas clasificadas `DESCARTADO` (tamaño 0 o corruptas desde origen)
-- 4 PDFs con `n_pages=0` (corruptos — se excluyen de Fase 2)
-- Mojibake en nombres de archivo por conversión Windows → resuelto via índice MD5
-- Categoría `Otros` (14 docs) heterogénea: TP, Formatos, Anexos — no se modelan como clase propia
+Valores Flesch: mayor = más fácil de leer. RUT tiene el valor más alto porque el formulario DIAN es léxicamente simple (palabras cortas). CC tiene el valor más bajo porque contiene lenguaje jurídico con muchas palabras largas.
 
-## 5. Implicaciones para fases posteriores
+### 4.5 Distribuciones físicas
 
-1. **Fase 2.1 OCR:** dos motores en paralelo según `es_escaneado` (EasyOCR / PyMuPDF) por la mezcla 42/58
-2. **Fase 2.2 Anotaciones:** flujo diferenciado — LFs en RUT (texto limpio), regex laxa en Cédulas (OCR), anotación manual Pólizas/CC
-3. **Fase 2.3 Chunking:** 3 estrategias según longitud medida (sin chunking / sliding window / layout-aware)
-4. **Fase 3 Modelado:** incluir candidato layout-aware (LayoutLMv3) por densidad tabular de RUT/CC
+```
+n_pages stats:
+  mean    14.0
+  std    109.4    ← alta varianza: algunos docs son excepcionalmente largos
+  min      0.0    ← 4 corruptos
+  25%      1.0    ← mitad del corpus tiene ≤4 páginas
+  50%      4.0
+  75%      9.0
+  max   3119.0    ← outlier extremo
 
-## 6. Evidencia en disco
+blur_score stats:
+  mean   5,764
+  std    3,826
+  min       13.8   ← documentos muy borrosos
+  50%    5,253
+  max   18,449
+
+char_count stats:
+  mean    3,078
+  min         0    ← escaneados, sin texto digital
+  50%     2,000
+  max    13,745
+```
+
+## 5. La lectura crítica
+
+### 5.1 Las 4 tipologías viven en mundos distintos
+
+- **Cédulas** son 93% imágenes → el sistema **depende de OCR** para ellas. Sin OCR funcional en Cédulas, 32.9% del corpus es inútil para NER.
+- **RUT** son 88% digital → texto nativo disponible. Se puede atacar con Labeling Functions regex (weak supervision a la Ratner 2018 [4]).
+- **Pólizas** son 63% digital → mezclado, pero manejable sin OCR masivo.
+- **CC** son 91% digital → caso ideal. Documentos largos con texto estructurado.
+
+### 5.2 Implicación inmediata
+
+La decisión arquitectural nace aquí: **no hay pipeline único**. Hay 4 flujos que se cruzan en los puntos donde coinciden:
+
+```
+Cédula   ──► OCR (EasyOCR) ──► NER sobre texto ruidoso
+RUT      ──► PyMuPDF ──► LFs regex ──► NER sobre texto limpio
+Póliza   ──► OCR + PyMuPDF mix ──► NER manual por layout variable
+CC       ──► PyMuPDF ──► NER layout-aware (§Propuesta Modelos N-3)
+```
+
+### 5.3 El límite del chunking de Llama 3
+
+RUT y CC superan los 1,800 tokens BPE en mediana (1,861 y 1,772 respectivamente). Llama 3 tiene contexto 2,048 en la config del proyecto — el límite de 1,800 tokens deja margen del 12% para prompt + output. **Chunking obligatorio** para estas dos tipologías.
+
+## 6. Anomalías y hallazgos secundarios
+
+- **3,119 páginas en un solo documento** (max n_pages) → outlier extremo que requiere verificación manual. Probablemente un expediente agregado, no un certificado individual.
+- **4 docs con `n_pages=0`** (corruptos) y **3 `DESCARTADO`** → se excluyen de Fase 2. 1,007 docs efectivos.
+- **Mojibake detectado en nombres:** `CÃÂ©dula`, `CÃÂ¡mara de Comercio` en `category`. Artefacto de Windows → CSV UTF-8. Se resuelve con índice MD5 para evitar colisiones.
+- **Vocabulario CIIU** contamina embeddings de RUT. El formulario DIAN imprime la lista completa de clasificaciones (Resolución DIAN 000110/2021 [5]) → ~300 términos ajenos al contenido real del RUT. Requiere filtrado específico.
+
+## 7. ¿Qué sigue? — Cap. 2
+
+Con el diagnóstico en mano, la pregunta que abre el siguiente capítulo es:
+
+> *¿Cómo se implementan 4 flujos distintos sin que el código se vuelva inmanejable?*
+
+El Notebook 02 responde con **12 funciones reutilizables** agrupadas en un módulo `pipeline.py` y un dispatcher `chunk_document()` que decide la estrategia según la tipología. Se validan las funciones sobre un piloto de 5 docs por tipo y se define la estructura de las Labeling Functions regex para RUT.
+
+→ [nb02_resultados.md](nb02_resultados.md)
+
+## 8. Evidencia en disco
 
 | Artefacto | Descripción | Commiteable |
 |---|---|---|
 | `data/processed/quality_report_completo.csv` | 1,014 filas × 15 columnas con metadata por doc | ❌ PII |
-| `data/processed/fig01..fig10.png` | Figuras EDA | ✅ |
+| `data/processed/fase1_decisiones.json` | Decisiones de la fase (chunking, BPE correction, etc.) | ✅ |
+| `data/processed/fig01..fig10.png` | Figuras EDA (inventario, calidad, textometría) | ✅ |
 | `data/processed/near_duplicates.json` | Detección MinHash de duplicados | ✅ |
-| `data/processed/vocabulario_dominio.json` | Vocabulario dominio por tipología | ✅ |
-| `data/processed/fase1_decisiones.json` | Decisiones tomadas en Fase 1 | ✅ |
+| `data/processed/vocabulario_dominio.json` | Vocabulario por tipología | ✅ |
+| `data/processed/portadas_detectadas.json` | Outputs del detector de portadas | ✅ |
 
-## 7. Referencias internas
+## 9. Referencias científicas
 
-- [PLAN_MODELADO_CRISPDM.md §1](../PLAN_MODELADO_CRISPDM.md) — Fase 1 checklist marcada ✅
-- Hallazgos 1 y 2 citados en §2.2 y §2.3 respectivamente
+| # | Cita | URL |
+|---|---|---|
+| [1] | Wirth, R. & Hipp, J. (2000). *CRISP-DM: Towards a Standard Process Model for Data Mining*. 4th Intl. Conf. on the Practical Applications of Knowledge Discovery and Data Mining | https://www.cs.unibo.it/~montesi/CBD/Beatriz/10.1.1.198.5133.pdf |
+| [2] | Wang, W. et al. (2025). *A Survey on Document Intelligence Foundations and Frontiers*. arXiv | https://arxiv.org/abs/2510.13366 |
+| [3] | Szigriszt-Pazos, F. (1993). *Sistemas predictivos de legibilidad del mensaje escrito: fórmula de perspicuidad*. Universidad Complutense (tesis doctoral) | https://eprints.ucm.es/id/eprint/1849/ |
+| [4] | Ratner, A. et al. (2018). *Snorkel: Rapid Training Data Creation with Weak Supervision*. VLDB 2018 | https://arxiv.org/abs/1711.10160 |
+| [5] | DIAN. *Resolución 000110 del 11-10-2021* (estructura del RUT) | https://www.dian.gov.co/normatividad/Normatividad/Resoluci%C3%B3n%20000110%20de%2011-10-2021.pdf |

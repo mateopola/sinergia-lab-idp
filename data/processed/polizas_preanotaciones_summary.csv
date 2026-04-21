@@ -1,0 +1,2 @@
+total_muestra,train,val,cobertura_numero_poliza,cobertura_aseguradora,aseguradoras_distintas_detectadas,seed
+120,80,40,0.7,0.5,7,42

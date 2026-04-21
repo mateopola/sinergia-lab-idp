@@ -182,27 +182,27 @@ for texto, desc in [
 add_heading(doc, '2.3.2 Estrategia de muestreo', level=2)
 add_para(doc,
     'Se aplicó un muestreo estratificado por tipo documental sobre los 1,678 páginas escaneadas '
-    'del corpus. Semilla fija random_state=42 (reproducible). Cap uniforme de 4 páginas por documento '
-    'para acotar el esfuerzo humano de transcripción.')
+    '(412 documentos) del corpus. Semilla fija random_state=42 (reproducible). Cap uniforme de '
+    '4 páginas por documento para acotar el esfuerzo humano de transcripción.')
 
 add_table(doc,
     headers=['Clase', 'Docs escaneados en corpus', 'Docs en Gold', '% muestreado', 'Criterio de estratificación'],
     rows=[
-        ['Cédula de Ciudadanía', '312', '6', '1.9%',
-         'Estratificado por calidad visual: 3 alta calidad (blur_score ≥ Q3) + 3 ruidosas (blur_score ≤ Q1)'],
-        ['RUT (DIAN)', '35', '3', '8.6%',
-         'Aleatorio sobre escaneados (la mayoría del RUT es digital)'],
+        ['Cédula de Ciudadanía', '308', '6', '1.9%',
+         'Estratificado por calidad visual de Fase 1: 3 alta calidad (quality_label=APTO con blur y contraste altos) + 3 ruidosas (quality_label=REQUIERE_PREPROCESAMIENTO o blur bajo)'],
+        ['RUT (DIAN)', '24', '3', '12.5%',
+         'Aleatorio sobre escaneados (la mayoría del RUT del corpus es digital: 200/235)'],
         ['Póliza de Seguro', '59', '3', '5.1%',
          'Aleatorio sobre escaneados'],
         ['Cámara de Comercio', '16', '3', '18.8%',
-         'Aleatorio sobre escaneados (la mayoría del CC es digital)'],
-        ['TOTAL', '422', '15 docs (36 pág.)', '3.6%', '—'],
+         'Aleatorio sobre escaneados (la mayoría del CC del corpus es digital: 183/199)'],
+        ['TOTAL', '407', '15 docs (39 páginas transcritas)', '3.7% (docs) · 2.3% (páginas)', '—'],
     ],
-    widths=[Cm(3.5), Cm(3), Cm(2.2), Cm(2), Cm(6)]
+    widths=[Cm(3), Cm(2.8), Cm(2.2), Cm(2.5), Cm(6)]
 )
 
 add_image(doc, FIGS / 'fig_gold_composicion.png', width_cm=14,
-          caption='Figura 1. Composición del Gold Standard: 15 documentos / 36 páginas.')
+          caption='Figura 1. Composición del Gold Standard: 15 documentos / 39 páginas.')
 
 add_heading(doc, '2.3.3 Protocolo de anotación', level=2)
 add_para(doc, 'El flujo de anotación sigue 5 pasos:')
@@ -246,7 +246,7 @@ add_para(doc,
     'Las páginas con κ por debajo del umbral se reanotan.')
 add_alert(doc,
     'PENDIENTE — Acuerdo inter-anotador ejecutado: reportar el valor final de Cohen\'s κ '
-    'obtenido sobre las 36 páginas del gold, y el número de páginas reanotadas.')
+    'obtenido sobre las 39 páginas del gold, y el número de páginas reanotadas.')
 
 add_pb(doc)
 

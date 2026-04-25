@@ -93,3 +93,7 @@ tensorboard_logs/
 # ─── Trabajo exploratorio de Camilo (Colab + Excel con PII) ──────────────────
 # Insumos que consume scripts/generar_seccion_3_5_4.py; se mantienen locales.
 camilo trabajo/
+
+# ─── MiniProyecto (LightGBM + dataset Excel con PII) ─────────────────────────
+# Trabajo exploratorio paralelo, no parte del pipeline principal.
+MiniProyecto/

@@ -16,6 +16,18 @@ data/processed/rut_preanotaciones_labelstudio.json
 data/processed/cedulas_preanotaciones_labelstudio.json
 data/processed/polizas_preanotaciones_labelstudio.json
 data/processed/camara_comercio_preanotaciones_labelstudio.json
+data/processed/ocr_pendientes.csv
+data/processed/corpus_ocr.backup_*.csv
+data/processed/c1_predictions.csv
+data/processed/c2_predictions.csv
+data/processed/c3_predictions.csv
+
+# ─── Stagings de upload a Drive (PII + grandes) ───────────────────────────────
+data/_to_upload/
+data/_to_upload_images_p1/
+
+# ─── Modelos entrenados (Fase 3) ──────────────────────────────────────────────
+models/
 data/gold/ocr_output/
 data/gold/transcriptions/
 
@@ -77,3 +89,7 @@ logs/
 *.log
 tensorboard_logs/
 .claude/
+
+# ─── Trabajo exploratorio de Camilo (Colab + Excel con PII) ──────────────────
+# Insumos que consume scripts/generar_seccion_3_5_4.py; se mantienen locales.
+camilo trabajo/

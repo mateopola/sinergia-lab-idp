@@ -219,6 +219,39 @@ def select_ocr(tipologia):
 - [ ] Normalizar columna `folder` (actualmente 10 valores por mojibake de digitales vs 5 reales)
 - [ ] Opcional: pasar las 463 páginas-imagen (dentro de digitales) por EasyOCR como tercer pase (recuperaría ~400 pág que hoy aparecen con `text_chars=0`)
 
+### 2.1.5 Re-unificación OCR — decisión 2026-04-21
+
+> **Cambio de arquitectura:** se elimina el selector híbrido EasyOCR/PyMuPDF documentado en §2.1.1. A partir del 2026-04-21 el corpus se procesa **íntegramente con EasyOCR** (escaneados Y digitales) por razones de paridad train-inference.
+
+**Justificación:** En producción los documentos llegan sin clasificar previamente; si entrenamos los modelos NER y de Clasificación con texto procedente de dos motores OCR distintos (perfecto desde PyMuPDF para digitales vs ruidoso desde EasyOCR para escaneados), introducimos un **distribution shift** entre el dataset de entrenamiento y la realidad de inferencia. La unificación bajo EasyOCR garantiza que toda página vista en entrenamiento tenga la misma distribución de errores que tendrá en producción.
+
+**Costo aceptado:** las páginas digitales degradan su CER de ~0.0 a ~0.28 (un retroceso aparente de calidad), pero ese costo se compensa con uniformidad estadística del dataset.
+
+**Beneficio colateral:** los `bboxes_json` quedan poblados para el 100% del corpus (antes solo para los 1,674 escaneados procesados con EasyOCR), resolviendo el gap de insumos para el candidato C-3 LayoutLMv3.
+
+**Decisiones operativas confirmadas (2026-04-21):**
+
+1. **Excluir clase Otros** del corpus de entrenamiento (9 docs heterogéneos, sin patrón discriminativo). Clases finales del clasificador: `{Cedula, RUT, Poliza, CamaraComercio}` — 4 clases.
+2. **Límite de 10 páginas por documento** durante el OCR. Justificación: 79% del corpus ya es ≤10 págs naturalmente; BETO/LayoutLMv3 truncan a 512 tokens; TF-IDF tiene suficiente con 10 págs × 2k chars = 20k chars; el cache MD5 permite re-OCR extendido si NER (futuro) lo necesita.
+3. **Hallazgo de calidad resuelto:** 2 docs en folder `RUT` eran en realidad RUPs (`10. REGISTRO UNICO DE PROPONENTES.pdf` 1,331 págs y `Registro Unico de Propnentes (RUP).pdf` 606 págs). **Eliminados** del corpus: movidos a `data/raw/_quarantine_misclassified/` y limpiadas sus 1,937 filas de `corpus_ocr.csv` (2026-04-21).
+
+**Volumen final a procesar:** 747 docs únicos · ~3,821 páginas · ~6.4 h Colab T4.
+
+**Tareas:**
+- [x] Crear `scripts/identificar_pendientes_ocr.py` que produce `data/processed/ocr_pendientes.csv` (✅ 2026-04-21)
+- [x] Decidir scope: sin Otros + límite 10 págs (✅ 2026-04-21)
+- [ ] Re-correr script con dedup md5 + exclusión Otros (fix bug menor)
+- [ ] Crear `notebooks/colab_ocr_unificacion.ipynb` para Colab Free GPU
+- [ ] Subir `data/raw/{CEDULA,POLIZA,CAMARA DE CIO,rut}/` a Google Drive (~1.5 GB)
+- [ ] Sesión Colab (~6.4 h) — cabe en 1 sola
+- [ ] Descargar `corpus_ocr.csv` actualizado, verificar integridad
+- [ ] Generar imágenes pág 1 para 548 digitales (PyMuPDF render local, no OCR)
+- [ ] Commit `feat(fase2.1.5): OCR unificado EasyOCR (Colab GPU, limite 10 pags)`
+
+**Hardware:** se ejecuta en Colab Free (Tesla T4 16 GB) porque el equipo del usuario (AMD Ryzen 5 4500U + AMD integrada sin CUDA + 8 GB RAM al 88%) tomaría ~9-12 días vs ~6.4 h en Colab.
+
+**Documentos relacionados:** ver [PLAN_OCR_COLAB.md](PLAN_OCR_COLAB.md) para checklist operativo, métricas de éxito y cómo retomar tras caída de sesión.
+
 ### 2.1.2 Gold Standard (verdad absoluta para evaluación)
 > **Qué es:** conjunto reducido de documentos anotados manualmente con máxima rigurosidad, usado como referencia inmutable para medir OCR, LFs y modelo NER final. Sin gold no se puede responder "¿funciona mi modelo?".
 

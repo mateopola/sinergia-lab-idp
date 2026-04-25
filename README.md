@@ -8,17 +8,20 @@
 
 ## Estado del proyecto
 
-**Última actualización:** 2026-04-18
+**Última actualización:** 2026-04-21
+
+> **Nuevo enfoque (2026-04-21):** Esta fase del proyecto se concentra en **Modelado y Evaluación de Clasificación** (3 candidatos C-1/C-2/C-3). Las anotaciones NER quedan parqueadas hasta cerrar clasificación. Adicionalmente: el corpus se está re-unificando bajo EasyOCR (eliminando el selector híbrido con PyMuPDF) por paridad train-inference. Ver [PLAN_OCR_COLAB.md](PLAN_OCR_COLAB.md) y [memoria del proyecto](C:/Users/mateo/.claude/projects/c--Users-mateo-Desktop-Archivos-SinergiaLabProyecto/memory/MEMORY.md).
 
 | Fase | Estado | Notas |
 |---|---|---|
-| **Fase 1 — Comprensión de datos** | ✅ Completa | EDA sobre 1,014 docs SECOP. Corpus caracterizado (332 cédulas / 235 RUT / 219 pólizas / 212 CC / 14 otros; 416 escaneados / 548 digitales). Output: `quality_report_completo.csv`. |
-| **Fase 2 §2.1 — Preprocesamiento + OCR** | ✅ Completa | Pipeline OpenCV aplicado (nb 04). Benchmark OCR ejecutado (nb 03) → EasyOCR. Corpus OCR productivo (nb 05, 23 h overnight) + cierre de gaps (nb 05b, 20 min) → `corpus_ocr.csv` con **13,254 páginas / 960 docs / 32.6 M chars**. EasyOCR sobre 1,678 escaneados (CER 0.28 vs gold, entity_recall 0.68) + PyMuPDF sobre 11,576 páginas de digitales. 0 errores. |
-| **Fase 2 §2.2 — Anotaciones** | 🟡 En curso | Pipeline completo de 4 notebooks listo: RUT 216 docs · Cédulas 60 · Pólizas 120 · CC 120 = **516 docs pre-anotados**. Pendiente: Label Studio (revisión humana). |
-| **Fase 2 §2.3 — Chunking** | ⏳ Pendiente | Funciones definidas (`chunk_document`). Falta aplicar al corpus para generar `train.jsonl` / `val.jsonl`. |
+| **Fase 1 — Comprensión de datos** | ✅ Completa | EDA sobre 1,014 docs SECOP. Corpus caracterizado (334 cédulas / 235 RUT / 219 pólizas / 212 CC / 14 otros). Output: `quality_report_completo.csv`. |
+| **Fase 2 §2.1 — Preprocesamiento + OCR** | ✅ v1 (híbrido) · 🟡 v2 en curso | v1: 13,254 págs (1,678 EasyOCR + 11,576 PyMuPDF). v2: re-unificación a EasyOCR único en Colab GPU. Scope confirmado: 747 docs (sin clase Otros + sin 2 RUPs mal clasificados), 4 clases finales `{Cedula, RUT, Poliza, CamaraComercio}`, límite 10 págs/doc, ~3,821 págs totales, ~6.4 h Colab T4. Ver [PLAN_OCR_COLAB.md](PLAN_OCR_COLAB.md). |
+| **Fase 2 §2.2 — Anotaciones NER** | ⏸️ Parqueado | Pre-anotaciones generadas (516 docs en 4 JSONs Label Studio). Revisión humana diferida hasta cerrar Fase 3 Clasificación. Ver [LABEL_STUDIO_SETUP.md](LABEL_STUDIO_SETUP.md) y [CRITERIOS_ANOTACION.md](CRITERIOS_ANOTACION.md) para cuando se retome. |
+| **Fase 2 §2.3 — Chunking** | ⏳ Pendiente | Diferido hasta retomar NER. |
 | **Fase 2 §2.4 — Augmentación** | ⏳ Pendiente | Diferido hasta antes del fine-tuning. |
-| **Fase 3 — Modelado** | ⏳ Pendiente | Arctic-Extract + Llama 3 8B QLoRA. |
-| **Fase 4 — Evaluación** | ⏳ Pendiente | Experimentos comparativos + gold extendido a 70 docs. |
+| **Fase 3 §3.0 — Clasificación** | 🟡 En curso (foco actual) | Insumos verificados: texto OCR + labels (folder) + bboxes (post v2) + imágenes pág 1. Notebooks nb10 (C-1 TF-IDF, CPU), nb11 (C-2 BETO, Colab), nb12 (C-3 LayoutLMv3, Colab) en preparación. |
+| **Fase 3 §3.1 — NER (modelado)** | ⏳ Pendiente | Pendiente de revisión Label Studio (Fase 2.2). |
+| **Fase 4 — Evaluación** | ⏳ Pendiente | Experimentos comparativos por fase. |
 
 ---
 

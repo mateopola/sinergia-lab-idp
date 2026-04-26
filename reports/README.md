@@ -90,10 +90,14 @@ Este directorio contiene el análisis detallado de los resultados reales de cada
 | 04 | La preparación — 1,678 imágenes, un giro contra-intuitivo | [nb04_resultados.md](nb04_resultados.md) | ✅ |
 | 05 | La travesía — 23 horas extrayendo texto | [nb05_resultados.md](nb05_resultados.md) | ✅ |
 | 05b | El cierre — cuando el texto digital hace al OCR ver pequeño | [nb05b_resultados.md](nb05b_resultados.md) | ✅ |
+| 05c | La unificación — EasyOCR para todo el corpus (Colab GPU, 2 sesiones) | [colab_ocr_unificacion_resultados.md](colab_ocr_unificacion_resultados.md) | ✅ |
 | 06 | El experimento Snorkel — ¿funcionan las reglas en RUT? | [nb06_resultados.md](nb06_resultados.md) | ✅ |
 | 07 | La paradoja de la calidad — cédulas ruidosas ganan | [nb07_resultados.md](nb07_resultados.md) | ✅ |
 | 08 | El caso difícil — Pólizas con layout variable | [nb08_resultados.md](nb08_resultados.md) | ✅ |
 | 09 | El caso regulado — Cámara de Comercio y LayoutLMv3 | [nb09_resultados.md](nb09_resultados.md) | ✅ |
+| 10 | El baseline trivial — TF-IDF + LR sobre 4 clases auto-identificadoras (F1=1.0) | [nb10_resultados.md](nb10_resultados.md) | ✅ |
+| 11 | (pendiente) BETO fine-tuned — C-2 en Colab GPU | nb11_resultados.md | ⏳ |
+| 12 | (pendiente) LayoutLMv3 multimodal — C-3 en Colab GPU | nb12_resultados.md | ⏳ |
 
 ## Ritual de actualización post-ejecución
 

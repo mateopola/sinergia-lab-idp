@@ -15,11 +15,11 @@
 | Fase | Estado | Notas |
 |---|---|---|
 | **Fase 1 — Comprensión de datos** | ✅ Completa | EDA sobre 1,014 docs SECOP. Corpus caracterizado (334 cédulas / 235 RUT / 219 pólizas / 212 CC / 14 otros). Output: `quality_report_completo.csv`. |
-| **Fase 2 §2.1 — Preprocesamiento + OCR** | ✅ v1 (híbrido) · 🟡 v2 en curso | v1: 13,254 págs (1,678 EasyOCR + 11,576 PyMuPDF). v2: re-unificación a EasyOCR único en Colab GPU. Scope confirmado: 747 docs (sin clase Otros + sin 2 RUPs mal clasificados), 4 clases finales `{Cedula, RUT, Poliza, CamaraComercio}`, límite 10 págs/doc, ~3,821 págs totales, ~6.4 h Colab T4. Ver [PLAN_OCR_COLAB.md](PLAN_OCR_COLAB.md). |
+| **Fase 2 §2.1 — Preprocesamiento + OCR** | ✅ v1 (híbrido) · ✅ v2 unificado | v1: 13,254 págs (1,678 EasyOCR + 11,576 PyMuPDF). **v2 (✅ 2026-04-26):** corpus re-unificado bajo EasyOCR único — 5,351 filas / **1,134 docs únicos** / 100% engine=easyocr / 99.87% bboxes / 0 errores. Scope final: 4 clases `{Cedula, RUT, Poliza, CamaraComercio}`. Ver [PLAN_OCR_COLAB.md](PLAN_OCR_COLAB.md) + [reports/colab_ocr_unificacion_resultados.md](reports/colab_ocr_unificacion_resultados.md). |
 | **Fase 2 §2.2 — Anotaciones NER** | ⏸️ Parqueado | Pre-anotaciones generadas (516 docs en 4 JSONs Label Studio). Revisión humana diferida hasta cerrar Fase 3 Clasificación. Ver [LABEL_STUDIO_SETUP.md](LABEL_STUDIO_SETUP.md) y [CRITERIOS_ANOTACION.md](CRITERIOS_ANOTACION.md) para cuando se retome. |
 | **Fase 2 §2.3 — Chunking** | ⏳ Pendiente | Diferido hasta retomar NER. |
 | **Fase 2 §2.4 — Augmentación** | ⏳ Pendiente | Diferido hasta antes del fine-tuning. |
-| **Fase 3 §3.0 — Clasificación** | 🟡 En curso (foco actual) | Insumos verificados: texto OCR + labels (folder) + bboxes (post v2) + imágenes pág 1. Notebooks nb10 (C-1 TF-IDF, CPU), nb11 (C-2 BETO, Colab), nb12 (C-3 LayoutLMv3, Colab) en preparación. |
+| **Fase 3 §3.0 — Clasificación** | 🟡 En curso (foco actual) | **C-1 TF-IDF ✅ ejecutado (2026-04-26):** Test Macro-F1=1.0000, 5-fold CV Macro-F1=0.996±0.004 — el dominio resulta trivialmente clasificable (4 clases con titulos auto-identificadores en pag 1), no comparable a RVL-CDIP. Esperando ejecutar C-2 BETO (Colab) y C-3 LayoutLMv3 (Colab) sobre mismo split. Ver [reports/nb10_resultados.md](reports/nb10_resultados.md). |
 | **Fase 3 §3.1 — NER (modelado)** | ⏳ Pendiente | Pendiente de revisión Label Studio (Fase 2.2). |
 | **Fase 4 — Evaluación** | ⏳ Pendiente | Experimentos comparativos por fase. |
 

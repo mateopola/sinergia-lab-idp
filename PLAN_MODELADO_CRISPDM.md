@@ -240,17 +240,21 @@ def select_ocr(tipologia):
 **Tareas:**
 - [x] Crear `scripts/identificar_pendientes_ocr.py` que produce `data/processed/ocr_pendientes.csv` (✅ 2026-04-21)
 - [x] Decidir scope: sin Otros + límite 10 págs (✅ 2026-04-21)
-- [ ] Re-correr script con dedup md5 + exclusión Otros (fix bug menor)
-- [ ] Crear `notebooks/colab_ocr_unificacion.ipynb` para Colab Free GPU
-- [ ] Subir `data/raw/{CEDULA,POLIZA,CAMARA DE CIO,rut}/` a Google Drive (~1.5 GB)
-- [ ] Sesión Colab (~6.4 h) — cabe en 1 sola
-- [ ] Descargar `corpus_ocr.csv` actualizado, verificar integridad
-- [ ] Generar imágenes pág 1 para 548 digitales (PyMuPDF render local, no OCR)
-- [ ] Commit `feat(fase2.1.5): OCR unificado EasyOCR (Colab GPU, limite 10 pags)`
+- [x] Re-correr script con dedup md5 + exclusión Otros (fix bug menor) (✅ 2026-04-21)
+- [x] Crear `notebooks/colab_ocr_unificacion.ipynb` para Colab Free GPU (✅ 2026-04-21)
+- [x] Subir `data/raw/{CEDULA,POLIZA,CAMARA DE CIO,rut}/` a Google Drive (~654 MB con staging) (✅ 2026-04-25)
+- [x] Sesión Colab (partido en 2 sesiones por límite de cuota Free; 5h+1h21min totales) (✅ 2026-04-25/26 — ver [reports/colab_ocr_unificacion_resultados.md](reports/colab_ocr_unificacion_resultados.md))
+- [x] Descargar `corpus_ocr.csv` actualizado, verificar integridad (✅ 2026-04-26 — 5,351 filas / 1,134 docs / 100% easyocr / 99.87% bboxes / 0 errores)
+- [x] Generar imágenes pág 1 para 548 digitales (PyMuPDF render local, no OCR) (✅ 2026-04-25 — `scripts/generar_imagenes_pag1_faltantes.py` → 1,159 imágenes en `data/processed/images/`)
+- [x] Commit `feat(fase2.1.5): OCR unificado EasyOCR (Colab GPU, limite 10 pags)` (✅ commits `af5267d` + `3b3bc11`)
 
 **Hardware:** se ejecuta en Colab Free (Tesla T4 16 GB) porque el equipo del usuario (AMD Ryzen 5 4500U + AMD integrada sin CUDA + 8 GB RAM al 88%) tomaría ~9-12 días vs ~6.4 h en Colab.
 
-**Documentos relacionados:** ver [PLAN_OCR_COLAB.md](PLAN_OCR_COLAB.md) para checklist operativo, métricas de éxito y cómo retomar tras caída de sesión.
+**Hallazgo operativo:** la sesión 1 (2026-04-25) se cortó al 67% por cuota agotada de Colab Free. Solución improvisada: el usuario habilitó una **segunda cuenta Google** + compartir Drive vía "Acceso directo" para retomar en Colab Free de la nueva cuenta. El cache MD5 retomó desde `corpus=4,584` filas y la sesión 2 terminó en 81 min. Setup total: 5 min. Documentado en `memory/colab_drive_setup.md`.
+
+**Resultado consolidado:** corpus `5,351 filas / 1,134 docs únicos / 100% engine=easyocr / 99.87% bboxes`. Backups múltiples en Drive y local. Fase 2.1.5 ✅ completa.
+
+**Documentos relacionados:** ver [PLAN_OCR_COLAB.md](PLAN_OCR_COLAB.md), [reports/colab_ocr_unificacion_resultados.md](reports/colab_ocr_unificacion_resultados.md).
 
 ### 2.1.2 Gold Standard (verdad absoluta para evaluación)
 > **Qué es:** conjunto reducido de documentos anotados manualmente con máxima rigurosidad, usado como referencia inmutable para medir OCR, LFs y modelo NER final. Sin gold no se puede responder "¿funciona mi modelo?".
@@ -495,11 +499,21 @@ from transformers import LayoutLMv3ForTokenClassification, LayoutLMv3Processor
 | **C-3** | **LayoutLMv3** fine-tuned | Modelo multimodal de Microsoft que ingesta texto + bounding boxes + parches de imagen en un mismo encoder. Estado del arte en documentos con layout. | Huang et al., ACM MM 2022 | GPU 8 GB |
 
 **Tareas:**
-- [ ] Implementar `notebooks/06_clasificacion_baseline.ipynb` — entrena C-1 sobre `corpus_ocr.csv` con split 70/15/15 (train/val/test) estratificado por folder
-- [ ] Implementar `notebooks/07_clasificacion_beto.ipynb` — fine-tuning de C-2 con HuggingFace `Trainer`
-- [ ] Implementar `notebooks/08_clasificacion_layoutlmv3.ipynb` — fine-tuning de C-3 con tokens + bounding boxes
-- [ ] Evaluar los 3 sobre el mismo test set → reportar macro-F1, accuracy y matriz de confusión
-- [ ] Seleccionar ganador por macro-F1 (desempate por VRAM → latencia)
+- [x] Implementar `notebooks/10_clasificacion_C1_tfidf.ipynb` — entrena C-1 sobre `corpus_ocr.csv` con split 70/15/15 estratificado, `random_state=42` (✅ 2026-04-26 — ver [reports/nb10_resultados.md](reports/nb10_resultados.md))
+- [ ] Implementar `notebooks/11_clasificacion_C2_beto.ipynb` — fine-tuning de C-2 con HuggingFace `Trainer` en Colab GPU
+- [ ] Implementar `notebooks/12_clasificacion_C3_layoutlmv3.ipynb` — fine-tuning de C-3 con tokens + bounding boxes en Colab GPU
+- [ ] Evaluar los 3 sobre el MISMO test set (mismo `random_state=42`) → reportar macro-F1, accuracy y matriz de confusión
+- [ ] Seleccionar ganador por macro-F1 (desempate por VRAM → latencia → tamaño)
+
+**Resultado parcial — C-1 ejecutado (2026-04-26):**
+- Test Macro-F1: **1.0000** | Test Accuracy: **1.0000** (sobre 168 docs no vistos)
+- 5-fold CV: Macro-F1 **0.9960 ± 0.0041** (descarta overfitting a split lucky)
+- Tiempo entrenamiento: **2.92 segundos** (CPU local)
+- Modelo guardado: `models/c1_tfidf/{vectorizer,classifier}.joblib` (~10 MB)
+
+**Hallazgo de la fase:** los documentos colombianos oficiales (RUT, Cédula, Póliza, CC) contienen títulos auto-identificadores en pág 1 ("Registro Único Tributario", "República de Colombia", "PÓLIZA", "Cámara de Comercio"). La tarea de clasificación es estructuralmente trivial — **no comparable directamente con benchmarks como RVL-CDIP** (16 clases heterogéneas). Se espera que C-2 y C-3 también converjan a ~100% F1; el comparativo se desplazará de **F1** hacia **costo / latencia / tamaño / interpretabilidad**.
+
+Para enriquecer el estudio queda como opcional `nb10b_clasificacion_C1_ablacion_lexical.ipynb` (eliminar términos auto-identificadores para crear margen de comparación) — no ejecutado por ahora, pendiente de decisión.
 
 ### 3.1 Extracción NER (3 candidatos)
 

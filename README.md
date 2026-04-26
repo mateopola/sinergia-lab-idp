@@ -19,7 +19,7 @@
 | **Fase 2 §2.2 — Anotaciones NER** | ⏸️ Parqueado | Pre-anotaciones generadas (516 docs en 4 JSONs Label Studio). Revisión humana diferida hasta cerrar Fase 3 Clasificación. Ver [LABEL_STUDIO_SETUP.md](LABEL_STUDIO_SETUP.md) y [CRITERIOS_ANOTACION.md](CRITERIOS_ANOTACION.md) para cuando se retome. |
 | **Fase 2 §2.3 — Chunking** | ⏳ Pendiente | Diferido hasta retomar NER. |
 | **Fase 2 §2.4 — Augmentación** | ⏳ Pendiente | Diferido hasta antes del fine-tuning. |
-| **Fase 3 §3.0 — Clasificación** | 🟡 En curso (foco actual) | **C-1 TF-IDF ✅ ejecutado (2026-04-26):** Test Macro-F1=1.0000, 5-fold CV Macro-F1=0.996±0.004 — el dominio resulta trivialmente clasificable (4 clases con titulos auto-identificadores en pag 1), no comparable a RVL-CDIP. Esperando ejecutar C-2 BETO (Colab) y C-3 LayoutLMv3 (Colab) sobre mismo split. Ver [reports/nb10_resultados.md](reports/nb10_resultados.md). |
+| **Fase 3 §3.0 — Clasificación** | 🟡 En curso (foco actual) | **C-1 TF-IDF ✅ (2026-04-26):** Test Macro-F1=1.0000, 5-fold CV=0.996±0.004. **C-2 BETO ✅ (2026-04-26):** Test Macro-F1=0.9914 (1 error en 168 — sin overfitting, val=1.0 en epoch 2). Hallazgo: C-2 NO supera a C-1 (cae dentro del ruido CV); el dominio es trivialmente clasificable. Pendiente C-3 LayoutLMv3 (Colab) y reporte comparativo. Ver [reports/nb10_resultados.md](reports/nb10_resultados.md), [reports/nb11_resultados.md](reports/nb11_resultados.md). |
 | **Fase 3 §3.1 — NER (modelado)** | ⏳ Pendiente | Pendiente de revisión Label Studio (Fase 2.2). |
 | **Fase 4 — Evaluación** | ⏳ Pendiente | Experimentos comparativos por fase. |
 

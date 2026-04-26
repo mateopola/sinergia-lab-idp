@@ -192,6 +192,29 @@ Estos son los **escaneados originales de nb05** (engine=easyocr desde la semana 
 
 Para nb10 (TF-IDF) este desbalance es irrelevante porque la vectorización normaliza por longitud. Para nb11 (BETO) y nb12 (LayoutLMv3) ambos truncan a 512 tokens.
 
+### 6.5 Las 210 cédulas nuevas NO pasaron por el preprocesamiento OpenCV de nb04
+
+Detectado en revisión 2026-04-26: el notebook Colab procesa los PDFs así:
+
+```
+PDF → PyMuPDF render @ 200 DPI → EasyOCR
+```
+
+Sin paso intermedio de OpenCV (CLAHE + deskew + grayscale) que sí se aplicó a los 1,678 págs escaneadas originales en nb04. Esto crea una **inconsistencia metodológica entre cédulas viejas (con preproc) y cédulas nuevas (sin preproc)**.
+
+**Diagnóstico cuantitativo de impacto** (216 pags Colab vs 356 pags local):
+
+| Métrica | Colab (sin preproc) | Local (con preproc) | Diff |
+|---|---|---|---|
+| Mean text_chars/pag | 410 | 415 | **-1.4%** |
+| Median text_chars/pag | 432 | 431 | +0.2% |
+| Pags <50ch (vacías) | 0.9% | 0.3% | +0.6pp |
+| Pags <200ch (poco texto) | 4.1% | 4.5% | -0.4pp |
+
+→ **Diferencia despreciable.** En la práctica el preproc no aporta valor a la calidad OCR de cédulas en este corpus, probablemente porque (a) los escaneos del corpus SECOP ya son modernos y de buena calidad visual, (b) EasyOCR usa una CNN robusta a skew y bajo contraste, (c) PyMuPDF render a 200 DPI da resolución suficiente.
+
+**Decisión:** no se re-procesan. La inconsistencia se documenta aquí para trazabilidad. Si en Fase 3.1 NER se observa baja cobertura específica en cédulas nuevas, se reconsideraría aplicar nb04 a ese subconjunto.
+
 ## 7. Qué sigue
 
 Esta fase **desbloquea Fase 3 (Modelado de Clasificación):**

@@ -96,7 +96,7 @@ Este directorio contiene el análisis detallado de los resultados reales de cada
 | 08 | El caso difícil — Pólizas con layout variable | [nb08_resultados.md](nb08_resultados.md) | ✅ |
 | 09 | El caso regulado — Cámara de Comercio y LayoutLMv3 | [nb09_resultados.md](nb09_resultados.md) | ✅ |
 | 10 | El baseline trivial — TF-IDF + LR sobre 4 clases auto-identificadoras (F1=1.0) | [nb10_resultados.md](nb10_resultados.md) | ✅ |
-| 11 | (pendiente) BETO fine-tuned — C-2 en Colab GPU | nb11_resultados.md | ⏳ |
+| 11 | BETO fine-tuned — la ironía del modelo más sofisticado (F1=0.9914, 1 error) | [nb11_resultados.md](nb11_resultados.md) | ✅ |
 | 12 | (pendiente) LayoutLMv3 multimodal — C-3 en Colab GPU | nb12_resultados.md | ⏳ |
 
 ## Ritual de actualización post-ejecución

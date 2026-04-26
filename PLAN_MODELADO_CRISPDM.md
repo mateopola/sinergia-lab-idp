@@ -500,7 +500,7 @@ from transformers import LayoutLMv3ForTokenClassification, LayoutLMv3Processor
 
 **Tareas:**
 - [x] Implementar `notebooks/10_clasificacion_C1_tfidf.ipynb` — entrena C-1 sobre `corpus_ocr.csv` con split 70/15/15 estratificado, `random_state=42` (✅ 2026-04-26 — ver [reports/nb10_resultados.md](reports/nb10_resultados.md))
-- [ ] Implementar `notebooks/11_clasificacion_C2_beto.ipynb` — fine-tuning de C-2 con HuggingFace `Trainer` en Colab GPU
+- [x] Implementar `notebooks/11_clasificacion_C2_beto.ipynb` — fine-tuning de C-2 con HuggingFace `Trainer` en Colab GPU (✅ 2026-04-26 — ver [reports/nb11_resultados.md](reports/nb11_resultados.md))
 - [ ] Implementar `notebooks/12_clasificacion_C3_layoutlmv3.ipynb` — fine-tuning de C-3 con tokens + bounding boxes en Colab GPU
 - [ ] Evaluar los 3 sobre el MISMO test set (mismo `random_state=42`) → reportar macro-F1, accuracy y matriz de confusión
 - [ ] Seleccionar ganador por macro-F1 (desempate por VRAM → latencia → tamaño)
@@ -511,7 +511,14 @@ from transformers import LayoutLMv3ForTokenClassification, LayoutLMv3Processor
 - Tiempo entrenamiento: **2.92 segundos** (CPU local)
 - Modelo guardado: `models/c1_tfidf/{vectorizer,classifier}.joblib` (~10 MB)
 
-**Hallazgo de la fase:** los documentos colombianos oficiales (RUT, Cédula, Póliza, CC) contienen títulos auto-identificadores en pág 1 ("Registro Único Tributario", "República de Colombia", "PÓLIZA", "Cámara de Comercio"). La tarea de clasificación es estructuralmente trivial — **no comparable directamente con benchmarks como RVL-CDIP** (16 clases heterogéneas). Se espera que C-2 y C-3 también converjan a ~100% F1; el comparativo se desplazará de **F1** hacia **costo / latencia / tamaño / interpretabilidad**.
+**Resultado parcial — C-2 BETO ejecutado (2026-04-26):**
+- Test Macro-F1: **0.9914** | Test Accuracy: **0.9940** (1 error de 168 — un CC clasificado como Póliza)
+- Curvas train/val descartan overfitting (ambas bajan en paralelo: train 0.094→0.029, val 0.022→0.0075)
+- Val Macro-F1 alcanza **1.0000** en epoch 2 (la tarea se resuelve)
+- Tiempo entrenamiento: **1.57 min** (Colab T4 GPU, fp16, ~19× más rápido que estimado)
+- Modelo guardado: `models/c2_beto/model.safetensors` (440 MB)
+
+**Hallazgo de la fase (con 2 modelos validados):** los documentos colombianos oficiales (RUT, Cédula, Póliza, CC) contienen títulos auto-identificadores en pág 1. La tarea es estructuralmente trivial. **C-2 BETO NO supera a C-1** — al contrario, C-2 falla en 1 doc que C-1 acierta, ironía del modelo más sofisticado captando semántica innecesaria. Diferencia (0.9914 vs 1.0000) cae dentro del rango de variabilidad de C-1 CV (no estadísticamente significativa). Se espera que C-3 LayoutLMv3 también converja a ~99-100%. **El criterio de selección se desplaza definitivamente de F1 hacia costo/latencia/tamaño** — donde C-1 gana en todos los ejes.
 
 Para enriquecer el estudio queda como opcional `nb10b_clasificacion_C1_ablacion_lexical.ipynb` (eliminar términos auto-identificadores para crear margen de comparación) — no ejecutado por ahora, pendiente de decisión.
 

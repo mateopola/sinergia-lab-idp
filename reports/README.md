@@ -97,7 +97,8 @@ Este directorio contiene el análisis detallado de los resultados reales de cada
 | 09 | El caso regulado — Cámara de Comercio y LayoutLMv3 | [nb09_resultados.md](nb09_resultados.md) | ✅ |
 | 10 | El baseline trivial — TF-IDF + LR sobre 4 clases auto-identificadoras (F1=1.0) | [nb10_resultados.md](nb10_resultados.md) | ✅ |
 | 11 | BETO fine-tuned — la ironía del modelo más sofisticado (F1=0.9914, 1 error) | [nb11_resultados.md](nb11_resultados.md) | ✅ |
-| 12 | (pendiente) LayoutLMv3 multimodal — C-3 en Colab GPU | nb12_resultados.md | ⏳ |
+| 12 | LayoutLMv3 multimodal — falla en doc DIFERENTE al de BETO (F1=0.9914) | [nb12_resultados.md](nb12_resultados.md) | ✅ |
+| **★** | **Comparativo final 3-vías C-1 vs C-2 vs C-3 — cierre de Fase 3.0** | **[clasificacion_comparativa_C1_C2_C3.md](clasificacion_comparativa_C1_C2_C3.md)** | **✅** |
 
 ## Ritual de actualización post-ejecución
 

@@ -501,26 +501,40 @@ from transformers import LayoutLMv3ForTokenClassification, LayoutLMv3Processor
 **Tareas:**
 - [x] Implementar `notebooks/10_clasificacion_C1_tfidf.ipynb` — entrena C-1 sobre `corpus_ocr.csv` con split 70/15/15 estratificado, `random_state=42` (✅ 2026-04-26 — ver [reports/nb10_resultados.md](reports/nb10_resultados.md))
 - [x] Implementar `notebooks/11_clasificacion_C2_beto.ipynb` — fine-tuning de C-2 con HuggingFace `Trainer` en Colab GPU (✅ 2026-04-26 — ver [reports/nb11_resultados.md](reports/nb11_resultados.md))
-- [ ] Implementar `notebooks/12_clasificacion_C3_layoutlmv3.ipynb` — fine-tuning de C-3 con tokens + bounding boxes en Colab GPU
-- [ ] Evaluar los 3 sobre el MISMO test set (mismo `random_state=42`) → reportar macro-F1, accuracy y matriz de confusión
-- [ ] Seleccionar ganador por macro-F1 (desempate por VRAM → latencia → tamaño)
+- [x] Implementar `notebooks/12_clasificacion_C3_layoutlmv3.ipynb` — fine-tuning de C-3 con tokens + bounding boxes en Colab GPU (✅ 2026-04-26 v2.1 tras refactor anti-OOM — ver [reports/nb12_resultados.md](reports/nb12_resultados.md))
+- [x] Evaluar los 3 sobre el MISMO test set (mismo `random_state=42`) → reportar macro-F1, accuracy y matriz de confusión (✅ 2026-04-26)
+- [x] Seleccionar ganador por macro-F1 (desempate por VRAM → latencia → tamaño) (✅ 2026-04-26 — **C-1 TF-IDF**)
 
-**Resultado parcial — C-1 ejecutado (2026-04-26):**
-- Test Macro-F1: **1.0000** | Test Accuracy: **1.0000** (sobre 168 docs no vistos)
-- 5-fold CV: Macro-F1 **0.9960 ± 0.0041** (descarta overfitting a split lucky)
-- Tiempo entrenamiento: **2.92 segundos** (CPU local)
-- Modelo guardado: `models/c1_tfidf/{vectorizer,classifier}.joblib` (~10 MB)
+**Resultado final — Fase 3.0 cerrada (2026-04-26):**
 
-**Resultado parcial — C-2 BETO ejecutado (2026-04-26):**
-- Test Macro-F1: **0.9914** | Test Accuracy: **0.9940** (1 error de 168 — un CC clasificado como Póliza)
-- Curvas train/val descartan overfitting (ambas bajan en paralelo: train 0.094→0.029, val 0.022→0.0075)
-- Val Macro-F1 alcanza **1.0000** en epoch 2 (la tarea se resuelve)
-- Tiempo entrenamiento: **1.57 min** (Colab T4 GPU, fp16, ~19× más rápido que estimado)
-- Modelo guardado: `models/c2_beto/model.safetensors` (440 MB)
+```
+                  C-1 TF-IDF    C-2 BETO    C-3 LayoutLMv3
+Test Accuracy     1.0000        0.9940      0.9940
+Test Macro-F1     1.0000        0.9914      0.9914
+Tiempo train      2.92 s        94 s        12.5 min
+Tamano modelo     <10 MB        440 MB      503 MB
+Hardware          CPU           GPU 6 GB    GPU 8 GB
+Latencia inf.     <10 ms        ~50 ms      ~200 ms
+```
 
-**Hallazgo de la fase (con 2 modelos validados):** los documentos colombianos oficiales (RUT, Cédula, Póliza, CC) contienen títulos auto-identificadores en pág 1. La tarea es estructuralmente trivial. **C-2 BETO NO supera a C-1** — al contrario, C-2 falla en 1 doc que C-1 acierta, ironía del modelo más sofisticado captando semántica innecesaria. Diferencia (0.9914 vs 1.0000) cae dentro del rango de variabilidad de C-1 CV (no estadísticamente significativa). Se espera que C-3 LayoutLMv3 también converja a ~99-100%. **El criterio de selección se desplaza definitivamente de F1 hacia costo/latencia/tamaño** — donde C-1 gana en todos los ejes.
+**Modelo seleccionado para producción: C-1 TF-IDF + Regresión Logística**, por dominar en TODOS los ejes (F1 igual o mejor + 256× más rápido + 50× más liviano + sin GPU + interpretable + mantenible).
 
-Para enriquecer el estudio queda como opcional `nb10b_clasificacion_C1_ablacion_lexical.ipynb` (eliminar términos auto-identificadores para crear margen de comparación) — no ejecutado por ahora, pendiente de decisión.
+**Hallazgos del estudio comparativo:**
+
+1. **La complejidad NO paga en este dominio.** C-2 y C-3 NO superan a C-1, contrario a expectativa de literatura general (RVL-CDIP, FUNSD, CORD donde transformers/multimodales ganan +5 a +15 pp).
+
+2. **Razón:** documentos colombianos oficiales contienen títulos auto-identificadores en pág 1 ("Registro Único Tributario", "República de Colombia", "PÓLIZA", "Cámara de Comercio"). La tarea se aproxima a "identificación de plantilla", no document classification general.
+
+3. **Errores ortogonales entre C-2 y C-3.** Los 2 docs fallados son DISTINTOS — cada arquitectura tiene su propia debilidad. Un ensemble por mayoría simple de los 3 modelos da 100% perfecto, validando diversidad de errores.
+
+4. **Validación rigurosa.** 5-fold CV de C-1 confirma 0.9960 ± 0.0041 (descarta overfitting a split favorable). C-2 (0.9914) y C-3 (0.9914) caen dentro del rango → diferencias no estadísticamente significativas.
+
+**Reporte comparativo consolidado:** [reports/clasificacion_comparativa_C1_C2_C3.md](reports/clasificacion_comparativa_C1_C2_C3.md)
+
+**Implicación:** la complejidad real del IDP no está en clasificación sino en NER (Fase 3.1). La inversión computacional debe redirigirse hacia esa fase.
+
+**Para enriquecer el estudio (opcional, no ejecutado):**
+- `nb10b_clasificacion_C1_ablacion_lexical.ipynb` (eliminar términos auto-identificadores para crear margen de comparación que muestre superioridad de BETO/LayoutLMv3) — pendiente de decisión.
 
 ### 3.1 Extracción NER (3 candidatos)
 

@@ -207,6 +207,44 @@ WARNING: HF_TOKEN does not exist in Colab secrets
 
 No bloqueante. Solo significa que las descargas se hacen con rate limit más estricto. Como solo descargamos BETO una vez (~440 MB), no afectó.
 
+### 6.4 Gap metodológico — class weights NO aplicados (asimetría con nb10)
+
+**Hallazgo de auditoría (post-corrida):** nb10 (C-1 TF-IDF) usa `LogisticRegression(class_weight='balanced')` para compensar el desbalance de clases (Cédula 47%, RUT 19%, Póliza 17%, CC 16%). Pero nb11 (C-2 BETO) **NO** usa class weights — el HuggingFace `Trainer` por defecto entrena con `CrossEntropyLoss` sin pesos.
+
+**Asimetría introducida:**
+
+| Notebook | Class weights | Implementación |
+|---|---|---|
+| nb10 C-1 | ✅ `balanced` | parámetro nativo de `LogisticRegression` |
+| **nb11 C-2** | ❌ ninguno | requeriría subclassear `Trainer` con `compute_loss` custom |
+
+**¿Afectó los resultados?** Empíricamente, NO. La evidencia:
+
+1. **El desbalance no es severo:** 47% para la mayoritaria es manejable sin pesos (sería problema con 80%+).
+2. **No hay sesgo hacia Cédula** en las métricas:
+   - Cédula precision=1.0, recall=1.0 → el modelo NO sobre-predice esta clase
+   - Si hubiera sesgo por desbalance, esperaríamos Cédula precision<1 (predicciones falsas) o recall<1 (omisiones)
+3. **El único error fue CC → Póliza** (dos clases minoritarias confundidas entre sí), no relacionado con la mayoritaria.
+
+**Por qué pasó:** omisión en el builder `build_notebook_11.py` al implementar el `Trainer` estándar. La buena práctica habría sido usar:
+
+```python
+class WeightedTrainer(Trainer):
+    def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
+        labels = inputs.pop("labels")
+        outputs = model(**inputs)
+        logits = outputs.logits
+        loss_fct = nn.CrossEntropyLoss(weight=class_weights_tensor)
+        loss = loss_fct(logits, labels)
+        return (loss, outputs) if return_outputs else loss
+```
+
+con `class_weights_tensor` calculado por `sklearn.utils.class_weight.compute_class_weight('balanced', ...)`.
+
+**Decisión (2026-04-26):** se documenta el gap, **no se re-corre** nb11 porque (a) el desbalance no es severo, (b) los resultados ya son sólidos (val F1=1.0, test F1=0.99+), (c) re-correr con class weights probablemente no cambiaría la conclusión del comparativo (BETO seguiría sin superar a TF-IDF). Si en el reporte académico se requiriera mayor rigor metodológico, una re-corrida toma ~30 min en Colab T4.
+
+**Nota para nb12:** mismo gap aplica al notebook de LayoutLMv3 (también usa `Trainer` estándar). Si en la matriz de confusión de nb12 se observara sesgo hacia Cédula, se reconsideraría re-correr con class weights.
+
 ## 7. Qué sigue
 
 ### 7.1 Inmediato — nb12 LayoutLMv3

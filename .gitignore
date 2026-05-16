@@ -26,6 +26,9 @@ data/processed/c3_predictions.csv
 data/_to_upload/
 data/_to_upload_images_p1/
 
+# ─── Datasets NER (texto completo de docs = PII) ──────────────────────────────
+data/processed/ner/
+
 # ─── Modelos entrenados (Fase 3) ──────────────────────────────────────────────
 models/
 data/gold/ocr_output/

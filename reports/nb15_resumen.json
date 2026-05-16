@@ -1,0 +1,154 @@
+{
+  "random_state": 42,
+  "split": [
+    0.7,
+    0.15,
+    0.15
+  ],
+  "by_tipologia": {
+    "cc": {
+      "docs_total": 80,
+      "docs_split": {
+        "train": 56,
+        "dev": 12,
+        "test": 12
+      },
+      "labels_total": {
+        "CC_NUM_MATRICULA": 73,
+        "CC_NIT": 75,
+        "CC_RAZON_SOCIAL": 79,
+        "CC_FECHA_CONSTITUCION": 70
+      },
+      "labels_por_split": {
+        "train": {
+          "CC_NUM_MATRICULA": 52,
+          "CC_NIT": 54,
+          "CC_RAZON_SOCIAL": 55,
+          "CC_FECHA_CONSTITUCION": 49
+        },
+        "dev": {
+          "CC_RAZON_SOCIAL": 12,
+          "CC_NIT": 11,
+          "CC_NUM_MATRICULA": 10,
+          "CC_FECHA_CONSTITUCION": 10
+        },
+        "test": {
+          "CC_RAZON_SOCIAL": 12,
+          "CC_NIT": 10,
+          "CC_NUM_MATRICULA": 11,
+          "CC_FECHA_CONSTITUCION": 11
+        }
+      },
+      "tokens_total": 25612
+    },
+    "ced": {
+      "docs_total": 227,
+      "docs_split": {
+        "train": 158,
+        "dev": 34,
+        "test": 35
+      },
+      "labels_total": {
+        "CED_NUMERO": 210,
+        "CED_APELLIDO": 205,
+        "CED_NOMBRE": 198,
+        "CED_LUGAR_EXPEDICION": 199,
+        "CED_FECHA_EXPEDICION": 200
+      },
+      "labels_por_split": {
+        "train": {
+          "CED_NUMERO": 148,
+          "CED_APELLIDO": 142,
+          "CED_NOMBRE": 137,
+          "CED_LUGAR_EXPEDICION": 133,
+          "CED_FECHA_EXPEDICION": 135
+        },
+        "dev": {
+          "CED_NUMERO": 31,
+          "CED_LUGAR_EXPEDICION": 31,
+          "CED_FECHA_EXPEDICION": 31,
+          "CED_NOMBRE": 31,
+          "CED_APELLIDO": 30
+        },
+        "test": {
+          "CED_NUMERO": 31,
+          "CED_APELLIDO": 33,
+          "CED_FECHA_EXPEDICION": 34,
+          "CED_LUGAR_EXPEDICION": 35,
+          "CED_NOMBRE": 30
+        }
+      },
+      "tokens_total": 14370
+    },
+    "pol": {
+      "docs_total": 113,
+      "docs_split": {
+        "train": 79,
+        "dev": 17,
+        "test": 17
+      },
+      "labels_total": {
+        "POL_TOMADOR": 96,
+        "POL_ENTIDAD_ASEGURADA": 103,
+        "POL_PRIMA": 97,
+        "POL_NUM_POLIZA": 60
+      },
+      "labels_por_split": {
+        "train": {
+          "POL_TOMADOR": 69,
+          "POL_ENTIDAD_ASEGURADA": 72,
+          "POL_PRIMA": 67,
+          "POL_NUM_POLIZA": 40
+        },
+        "dev": {
+          "POL_NUM_POLIZA": 11,
+          "POL_TOMADOR": 16,
+          "POL_ENTIDAD_ASEGURADA": 16,
+          "POL_PRIMA": 17
+        },
+        "test": {
+          "POL_TOMADOR": 11,
+          "POL_ENTIDAD_ASEGURADA": 15,
+          "POL_PRIMA": 13,
+          "POL_NUM_POLIZA": 9
+        }
+      },
+      "tokens_total": 55007
+    },
+    "rut": {
+      "docs_total": 133,
+      "docs_split": {
+        "train": 93,
+        "dev": 20,
+        "test": 20
+      },
+      "labels_total": {
+        "RUT_DIRECCION_PPAL": 133,
+        "RUT_RAZON_SOCIAL": 126,
+        "RUT_ACTIVIDAD_ECO": 100,
+        "RUT_NIT": 95
+      },
+      "labels_por_split": {
+        "train": {
+          "RUT_DIRECCION_PPAL": 93,
+          "RUT_RAZON_SOCIAL": 87,
+          "RUT_ACTIVIDAD_ECO": 74,
+          "RUT_NIT": 67
+        },
+        "dev": {
+          "RUT_RAZON_SOCIAL": 20,
+          "RUT_DIRECCION_PPAL": 20,
+          "RUT_NIT": 14,
+          "RUT_ACTIVIDAD_ECO": 12
+        },
+        "test": {
+          "RUT_RAZON_SOCIAL": 19,
+          "RUT_DIRECCION_PPAL": 20,
+          "RUT_NIT": 14,
+          "RUT_ACTIVIDAD_ECO": 14
+        }
+      },
+      "tokens_total": 67006
+    }
+  }
+}
